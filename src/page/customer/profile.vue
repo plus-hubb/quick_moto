@@ -881,25 +881,7 @@ const goSignin = () => {
 }
 
 
-const goHome = () => {
 
-  router.push('/home')
-
-}
-
-
-const goSearch = () => {
-
-  router.push('/search')
-
-}
-
-
-const goBookings = () => {
-
-  router.push('/bookings')
-
-}
 
 
 // ==============================
