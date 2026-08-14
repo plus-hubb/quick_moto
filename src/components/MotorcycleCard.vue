@@ -1,5 +1,8 @@
 <template>
-  <div class="bg-white rounded-2xl overflow-hidden shadow-md border border-slate-100">
+  <div
+    class="bg-white rounded-2xl overflow-hidden shadow-md border border-slate-100 cursor-pointer active:scale-[0.99] transition-transform"
+    @click="goToDetail"
+  >
 
     <!-- Image -->
     <div class="w-full h-40 sm:h-48 bg-slate-200 overflow-hidden">
@@ -41,7 +44,10 @@
           <i class="fa-solid fa-gauge-high text-slate-400"></i>
           <span>{{ vehicle.engine_size ?? '-' }} CC</span>
         </div>
-        
+        <div class="flex items-center gap-1.5 text-slate-500 text-xs sm:text-sm">
+          <i class="fa-solid fa-id-card text-slate-400"></i>
+          <span>{{ vehicle.registration_no }}</span>
+        </div>
       </div>
     </div>
   </div>
@@ -49,12 +55,20 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import type { Vehicle } from '../services/customerService'
 
 const props = defineProps<{
   vehicle: Vehicle
 }>()
 
+const router = useRouter()
+
 // ใส่ comma คั่นหลักพันให้ราคาอ่านง่าย เช่น 1200 -> 1,200
 const formattedPrice = computed(() => Number(props.vehicle.price).toLocaleString('en-US'))
+
+// กดการ์ดแล้วไปหน้ารายละเอียดของรถคันนั้น
+const goToDetail = () => {
+  router.push(`/vehicle/${props.vehicle.vehicle_id}`)
+}
 </script>

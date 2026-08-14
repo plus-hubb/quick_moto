@@ -77,10 +77,10 @@
       <!-- Bookings -->
       <button
         type="button"
-        @click="goBookings"
+        @click="goBooking"
         :class="[
           'flex flex-col items-center gap-1 transition-colors',
-          active === 'bookings'
+          active === 'booking'
             ? 'text-[#051329]'
             : 'text-slate-400'
         ]"
@@ -88,7 +88,7 @@
         <div
           :class="[
             'rounded-md px-3 py-1',
-            active === 'bookings'
+            active === 'booking'
               ? 'bg-[#dce5ff]'
               : ''
           ]"
@@ -99,7 +99,7 @@
         <span
           :class="[
             'text-[10px]',
-            active === 'bookings'
+            active === 'booking'
               ? 'font-medium'
               : ''
           ]"
@@ -156,7 +156,7 @@ const router = useRouter()
 
 // หน้าที่กำลังเปิดอยู่
 const props = defineProps<{
-  active: 'home' | 'search' | 'bookings' | 'profile'
+  active: 'home' | 'search' | 'booking' | 'profile'
 }>()
 
 
@@ -172,8 +172,8 @@ const goSearch = () => {
   router.push('/search')
 }
 
-const goBookings = () => {
-  router.push('/bookings')
+const goBooking = () => {
+  router.push('/booking')
 }
 
 const goProfile = () => {

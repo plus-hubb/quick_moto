@@ -595,6 +595,7 @@ export interface Vehicle {
   vehicle_type: string | null
   status: string
   image: string | null
+  explanation: string | null
 }
  
 /**

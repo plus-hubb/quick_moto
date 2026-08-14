@@ -5,6 +5,9 @@ import SignupView from '../page/signup.vue'
 import SigninView from '../page/signin.vue'
 import ProfileView from '../page/customer/profile.vue'
 import Home from '../page/customer/home.vue'
+import DetailView from '../page/customer/detail.vue'
+import BookingView from '../page/customer/booking.vue'
+import PaymentView from '../page/customer/payment.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -26,6 +29,21 @@ const routes: Array<RouteRecordRaw> = [
     path: '/home',
     name: 'home',
     component: Home,
+  },
+  {
+  path: '/vehicle/:id',
+  name: 'vehicle-detail',
+  component: DetailView,
+},
+ {
+    path: '/booking/:id',
+    name: 'booking',
+    component: BookingView,
+  },
+  {
+    path: '/payment',
+    name: 'payment',
+    component: PaymentView,
   },
 ]
 
