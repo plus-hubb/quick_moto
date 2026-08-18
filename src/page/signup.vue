@@ -118,9 +118,11 @@
               </span>
 
               <input
-                v-model="form.phone"
+                :value="form.phone"
+                 @input="handlePhoneInput"
                 type="tel"
-                inputmode="tel"
+                inputmode="numeric"
+                maxlength="10"
                 placeholder="08X-XXX-XXXX"
                 autocomplete="tel"
                 required
@@ -325,6 +327,13 @@ const imageError = ref(false)
 // ==============================
 // Signup
 // ==============================
+
+const handlePhoneInput = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const digitsOnly = target.value.replace(/\D/g, '').slice(0, 10)
+  form.phone = digitsOnly
+  target.value = digitsOnly
+}
 
 const handleSubmit = async () => {
   if (isLoading.value) return

@@ -428,9 +428,9 @@ export const updateCustomerPassword = async (
     )
   }
 
-  if (password.length < 6) {
+  if (password.length < 8) {
     throw new Error(
-      'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร'
+      'รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร'
     )
   }
 
