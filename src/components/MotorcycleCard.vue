@@ -45,8 +45,8 @@
           <span>{{ vehicle.engine_size ?? '-' }} CC</span>
         </div>
         <div class="flex items-center gap-1.5 text-slate-500 text-xs sm:text-sm">
-          <i class="fa-solid fa-id-card text-slate-400"></i>
-          <span>{{ vehicle.registration_no }}</span>
+          <i class="fa-solid fa-warehouse text-slate-400"></i>
+          <span>มีในคลัง {{ vehicle.quantity }} คัน</span>
         </div>
       </div>
     </div>

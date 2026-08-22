@@ -74,26 +74,16 @@
         </div>
       </div>
 
-      <!-- แจ้งเตือนถ้าช่วงวันที่เลือกทับกับ booking เดิม -->
-      <p v-if="!isDateRangeAvailable" class="text-xs text-red-500 mb-2 flex items-center gap-1.5">
+      <!-- แสดงจำนวนคันคงเหลือสำหรับช่วงวันที่ที่เลือก -->
+      <p v-if="isCheckingAvailability" class="text-xs text-slate-400 mb-6">กำลังเช็คจำนวนรถว่าง...</p>
+      <p v-else-if="!isDateRangeAvailable" class="text-xs text-red-500 mb-6 flex items-center gap-1.5">
         <i class="fa-solid fa-circle-exclamation"></i>
-        ช่วงวันที่เลือกถูกจองไปแล้ว กรุณาเลือกวันที่อื่น
+        ช่วงวันที่เลือกเต็มแล้ว กรุณาเลือกวันที่อื่น
       </p>
-
-      <!-- รายการช่วงวันที่ไม่ว่าง -->
-      <div v-if="bookedRanges.length > 0" class="mb-6">
-        <p class="text-xs text-slate-400 mb-1.5">ช่วงวันที่ไม่ว่าง</p>
-        <div class="flex flex-wrap gap-1.5">
-          <span
-            v-for="(range, idx) in bookedRanges"
-            :key="idx"
-            class="text-xs bg-slate-200 text-slate-600 px-2.5 py-1 rounded-full"
-          >
-            {{ formatDateTh(range.pickup_date) }} - {{ formatDateTh(range.return_date) }}
-          </span>
-        </div>
-      </div>
-      <div v-else class="mb-6"></div>
+      <p v-else class="text-xs text-emerald-600 mb-6 flex items-center gap-1.5">
+        <i class="fa-solid fa-circle-check"></i>
+        เหลือ {{ availableUnits }} คัน สำหรับช่วงวันที่นี้
+      </p>
 
       <!-- ข้อมูลผู้ขับขี่ -->
       <section class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-6">
@@ -168,10 +158,10 @@
         </div>
         <button
           @click="handleSubmitBooking"
-          :disabled="isSubmitting || !isDateRangeAvailable"
+          :disabled="isSubmitting || !isDateRangeAvailable || isCheckingAvailability"
           class="bg-[#051329] hover:bg-[#0a1f3d] disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2 transition-all active:scale-[0.99] shrink-0"
         >
-          <span>{{ isSubmitting ? 'กำลังจอง...' : !isDateRangeAvailable ? 'วันที่ไม่ว่าง' : 'ไปที่ชำระเงิน' }}</span>
+          <span>{{ isSubmitting ? 'กำลังจอง...' : !isDateRangeAvailable ? 'เต็มแล้ว' : 'ไปที่ชำระเงิน' }}</span>
           <i class="fa-solid fa-arrow-right text-sm"></i>
         </button>
       </div>
@@ -181,16 +171,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getVehicleById, type Vehicle } from '../../services/customerService'
 import {
   getCurrentCustomer,
   calcRentalDays,
-  getBookedRanges,
-  isRangeOverlapping,
-  holdVehicle,
-  type BookedRange
+  getAvailableUnits,
+  createHold
 } from '../../services/bookingService'
 
 const route = useRoute()
@@ -202,7 +190,9 @@ const isLoading = ref(false)
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 const showFullTerms = ref(false)
-const bookedRanges = ref<BookedRange[]>([])
+
+const availableUnits = ref(0)
+const isCheckingAvailability = ref(false)
 
 const todayStr = new Date().toISOString().split('T')[0]
 const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0]
@@ -224,16 +214,27 @@ const totalPrice = computed(() => {
 
 const formattedTotal = computed(() => totalPrice.value.toLocaleString('en-US'))
 
-// เช็คว่าช่วงวันที่เลือกอยู่ตอนนี้ ทับกับ booking เดิมของรถคันนี้หรือไม่
-const isDateRangeAvailable = computed(() => {
-  return !bookedRanges.value.some((r) =>
-    isRangeOverlapping(form.pickupDate, form.returnDate, r.pickup_date, r.return_date)
-  )
-})
+const isDateRangeAvailable = computed(() => availableUnits.value > 0)
 
-const formatDateTh = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+// เช็คจำนวนคันว่างใหม่ทุกครั้งที่เปลี่ยนวันที่
+const refreshAvailability = async () => {
+  if (!vehicle.value) return
+  isCheckingAvailability.value = true
+  try {
+    availableUnits.value = await getAvailableUnits(
+      vehicle.value.vehicle_id,
+      vehicle.value.quantity,
+      form.pickupDate,
+      form.returnDate
+    )
+  } finally {
+    isCheckingAvailability.value = false
+  }
 }
+
+watch(() => [form.pickupDate, form.returnDate], () => {
+  refreshAvailability()
+})
 
 const loadData = async () => {
   isLoading.value = true
@@ -242,13 +243,10 @@ const loadData = async () => {
   const vehicleId = Number(route.params.id)
 
   try {
-    const [vehicleData, customerData, bookedRangesData] = await Promise.all([
+    const [vehicleData, customerData] = await Promise.all([
       getVehicleById(vehicleId),
-      getCurrentCustomer(),
-      getBookedRanges(vehicleId)
+      getCurrentCustomer()
     ])
-
-    bookedRanges.value = bookedRangesData
 
     if (!vehicleData) {
       errorMessage.value = 'ไม่พบข้อมูลรถคันนี้'
@@ -264,6 +262,8 @@ const loadData = async () => {
     } else {
       errorMessage.value = 'กรุณาเข้าสู่ระบบก่อนทำการจอง'
     }
+
+    await refreshAvailability()
   } catch (err) {
     errorMessage.value = 'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
   } finally {
@@ -271,8 +271,8 @@ const loadData = async () => {
   }
 }
 
-// STEP 1: hold รถไว้ก่อน (สถานะ unavailable) แต่ "ยังไม่บันทึก" ลงตาราง booking
-// จะบันทึกจริงตอนแนบสลิปสำเร็จในหน้า payment.vue เท่านั้น
+// ตอนกด "ไปที่ชำระเงิน": สร้าง hold ชั่วคราว (หักจำนวนคงเหลือทันที) แล้วส่งไปหน้า payment
+// จะ insert ลงตาราง booking จริงๆ ก็ต่อเมื่อแนบสลิปสำเร็จเท่านั้น (ดูใน payment.vue)
 const handleSubmitBooking = async () => {
   if (!vehicle.value || !customerId.value) {
     alert('ไม่พบข้อมูลลูกค้า กรุณาเข้าสู่ระบบก่อนทำการจอง')
@@ -290,30 +290,37 @@ const handleSubmitBooking = async () => {
   }
 
   if (!isDateRangeAvailable.value) {
-    alert('ช่วงวันที่เลือกถูกจองไปแล้ว กรุณาเลือกวันที่อื่น')
+    alert('ช่วงวันที่เลือกเต็มแล้ว กรุณาเลือกวันที่อื่น')
     return
   }
 
   isSubmitting.value = true
 
   try {
-    await holdVehicle(vehicle.value.vehicle_id)
+    const hold = await createHold({
+      vehicleId: vehicle.value.vehicle_id,
+      customerId: customerId.value,
+      quantity: vehicle.value.quantity,
+      pickupDate: form.pickupDate,
+      returnDate: form.returnDate
+    })
 
-    const expiresAt = Date.now() + 5 * 60 * 1000
-
-    // ส่งข้อมูลร่างการจองไปหน้า payment ผ่าน query (ยังไม่มี booking_id เพราะยังไม่ insert)
     const query = new URLSearchParams({
+      holdId: String(hold.hold_id),
       vehicleId: String(vehicle.value.vehicle_id),
       customerId: String(customerId.value),
+      quantity: String(vehicle.value.quantity),
       pickupDate: form.pickupDate,
       returnDate: form.returnDate,
       rentalPrice: String(totalPrice.value),
-      expires: String(expiresAt)
+      expires: String(new Date(hold.expires_at).getTime())
     })
 
     router.push(`/payment?${query.toString()}`)
   } catch (err) {
-    alert('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง')
+    const message = err instanceof Error ? err.message : 'จองรถไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+    alert(message)
+    await refreshAvailability()
   } finally {
     isSubmitting.value = false
   }

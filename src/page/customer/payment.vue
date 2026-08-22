@@ -45,7 +45,7 @@
         </p>
         <p v-else class="text-sm text-emerald-600 font-medium mb-4">
           <i class="fa-solid fa-circle-check mr-1"></i>
-          แนบสลิปเรียบร้อยแล้ว รอการตรวจสอบ
+          แนบสลิปเรียบร้อยแล้ว บันทึกการจองสำเร็จ รอการตรวจสอบ
         </p>
 
         <div class="flex justify-center mb-5">
@@ -68,11 +68,11 @@
           <button
             type="button"
             @click="fileInputRef?.click()"
-            :disabled="isUploading"
+            :disabled="isUploading || slipUploaded"
             class="w-full bg-[#051329] hover:bg-[#0a1f3d] disabled:opacity-50 text-white font-medium py-3 px-4 rounded-xl shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
           >
             <i class="fa-solid fa-upload"></i>
-            <span>{{ isUploading ? 'กำลังอัพโหลด...' : slipUploaded ? 'อัพโหลดสลิปใหม่' : 'อัพโหลดสลิป' }}</span>
+            <span>{{ isUploading ? 'กำลังบันทึกการจอง...' : slipUploaded ? 'แนบสลิปแล้ว' : 'อัพโหลดสลิป' }}</span>
           </button>
 
           <button
@@ -93,21 +93,18 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
-import {
-  confirmBooking,
-  createPayment,
-  releaseVehicleHold,
-  calcRentalDays
-} from '../../services/bookingService'
+import { confirmBooking, createPayment, releaseHold, calcRentalDays } from '../../services/bookingService'
 import { supabase } from '../../lib/supabase'
 
 const route = useRoute()
 const router = useRouter()
 
-// ร่างข้อมูลการจองที่ยังไม่ถูกบันทึกลง booking (ส่งมาจาก booking.vue ผ่าน query)
+// ร่างข้อมูลการจองที่ผูกกับ hold ชั่วคราว (ส่งมาจาก booking.vue ผ่าน query)
 interface BookingDraft {
+  holdId: number
   vehicleId: number
   customerId: number
+  quantity: number
   pickupDate: string
   returnDate: string
   rentalPrice: number
@@ -120,9 +117,9 @@ const slipUploaded = ref(false)
 const isUploading = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-// booking_id / booking_code จะมีค่าก็ต่อเมื่อ insert สำเร็จแล้วเท่านั้น (หลังแนบสลิป)
-const createdBookingId = ref<number | null>(null)
+// booking_code จะมีค่าก็ต่อเมื่อ insert booking สำเร็จแล้ว (หลังแนบสลิป)
 const createdBookingCode = ref<string | null>(null)
+const createdBookingId = ref<number | null>(null)
 
 const expiresAt = Number(route.query.expires) || Date.now() + 5 * 60 * 1000
 const remainingMs = ref(expiresAt - Date.now())
@@ -145,11 +142,8 @@ const countdownLabel = computed(() => {
 
 const isUrgent = computed(() => remainingMs.value < 60 * 1000)
 
-// สร้าง QR code แบบง่าย (placeholder) — เปลี่ยนเป็น QR ของช่องทางชำระเงินจริงภายหลังได้
 const qrCodeUrl = computed(() => {
-  const payload = encodeURIComponent(
-    `vehicle:${draft.value?.vehicleId ?? ''}|amount:${depositPrice}`
-  )
+  const payload = encodeURIComponent(`vehicle:${draft.value?.vehicleId ?? ''}|amount:${depositPrice}`)
   return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${payload}`
 })
 
@@ -161,12 +155,12 @@ const startCountdown = () => {
       clearInterval(timerHandle!)
       timerHandle = null
 
-      // หมดเวลาโดยยังไม่แนบสลิป -> ยังไม่เคย insert booking เลย แค่คืนสถานะรถกลับเป็นว่าง
+      // หมดเวลาโดยยังไม่แนบสลิป -> ลบ hold ทิ้ง คันนี้ในช่วงวันที่นี้กลับมาว่างทันที
       if (draft.value) {
         try {
-          await releaseVehicleHold(draft.value.vehicleId)
+          await releaseHold(draft.value.holdId)
         } catch (err) {
-          console.error('releaseVehicleHold error:', err)
+          console.error('releaseHold on timeout error:', err)
         }
       }
 
@@ -176,6 +170,7 @@ const startCountdown = () => {
   }, 1000)
 }
 
+// ตอนแนบสลิปสำเร็จเท่านั้น ถึง insert ลงตาราง booking + payment จริง
 const handleFileSelected = async (event: Event) => {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -184,27 +179,21 @@ const handleFileSelected = async (event: Event) => {
   isUploading.value = true
 
   try {
-    // STEP 2: บันทึกรายการจองจริงลงตาราง booking ตอนนี้เลย (ก่อนแนบสลิปสำเร็จ)
-    let bookingId = createdBookingId.value
-    let bookingCode = createdBookingCode.value
+    // 1) แปลง hold เป็น booking จริง (status = รออนุมัติ)
+    const booking = await confirmBooking({
+      holdId: draft.value.holdId,
+      customerId: draft.value.customerId,
+      vehicleId: draft.value.vehicleId,
+      quantity: draft.value.quantity,
+      pickupDate: draft.value.pickupDate,
+      returnDate: draft.value.returnDate,
+      rentalPrice: draft.value.rentalPrice
+    })
+    createdBookingCode.value = booking.booking_code
+    createdBookingId.value = booking.booking_id
 
-    if (!bookingId) {
-      const booking = await confirmBooking({
-        customerId: draft.value.customerId,
-        vehicleId: draft.value.vehicleId,
-        pickupDate: draft.value.pickupDate,
-        returnDate: draft.value.returnDate,
-        rentalPrice: draft.value.rentalPrice
-      })
-      bookingId = booking.booking_id
-      bookingCode = booking.booking_code
-      createdBookingId.value = bookingId
-      createdBookingCode.value = bookingCode
-    }
-
-    const filePath = `payment/${bookingCode}-${Date.now()}-${file.name}`
-
-    // อัพโหลดไฟล์สลิปขึ้น Supabase Storage (bucket เดียวกับรูปรถ เก็บในโฟลเดอร์ payment/)
+    // 2) อัพโหลดไฟล์สลิปขึ้น Supabase Storage (bucket เดียวกับรูปรถ เก็บในโฟลเดอร์ payment/)
+    const filePath = `payment/${booking.booking_code}-${Date.now()}-${file.name}`
     const { error: uploadError } = await supabase.storage
       .from('qrick_moto_img')
       .upload(filePath, file)
@@ -215,20 +204,20 @@ const handleFileSelected = async (event: Event) => {
       .from('qrick_moto_img')
       .getPublicUrl(filePath)
 
+    // 3) บันทึกสลิปลงตาราง payment
     await createPayment({
-      bookingId,
+      bookingId: booking.booking_id,
       slipUrl: publicUrlData.publicUrl
     })
 
-    // หยุดนับถอยหลัง เพราะแนบสลิปแล้ว -> รถจะไม่ว่างตลอดตามช่วงวันที่จอง
     if (timerHandle) {
       clearInterval(timerHandle)
       timerHandle = null
     }
     slipUploaded.value = true
   } catch (err) {
-    console.error('upload slip error:', err)
-    const message = err instanceof Error ? err.message : 'อัพโหลดสลิปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+    console.error('confirm booking / upload slip error:', err)
+    const message = err instanceof Error ? err.message : 'บันทึกการจองไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
     alert(message)
   } finally {
     isUploading.value = false
@@ -236,23 +225,23 @@ const handleFileSelected = async (event: Event) => {
 }
 
 const handleContinue = () => {
-  router.push('/home')
+  if (createdBookingId.value) {
+    router.push(`/home`)
+  } else {
+    router.push('/home')
+  }
 }
 
-// เตือนก่อนออกจากหน้านี้ ถ้ายังไม่ได้แนบสลิป (booking ยังไม่ถูกยืนยัน)
-// - กรณีกดย้อนกลับในแอป (browser back / ปุ่มย้อนกลับ) -> ดักด้วย router guard ด้านล่าง
-// - กรณีปิดแท็บ/รีเฟรชตรงๆ -> เตือนด้วย beforeunload (ทำได้แค่เตือน ไม่สามารถยิง API แบบ async
-//   ให้เสร็จก่อนแท็บปิดได้แน่นอน จึงเป็นเพียง best-effort ไม่ใช่การรับประกัน)
+// เตือนก่อนออกจากหน้านี้ ถ้ายังไม่ได้แนบสลิป (จะไม่มีอะไรถูกบันทึกไว้เลยถ้าออกตอนนี้)
 const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-  if (!slipUploaded.value && draft.value && !createdBookingId.value) {
+  if (!slipUploaded.value && draft.value) {
     event.preventDefault()
     event.returnValue = ''
   }
 }
 
 onBeforeRouteLeave(async (_to, _from, next) => {
-  // ถ้าแนบสลิปสำเร็จแล้ว (booking ถูกบันทึกแล้ว) ออกจากหน้าได้เลยตามปกติ ไม่ต้องยกเลิกอะไร
-  if (slipUploaded.value || createdBookingId.value || !draft.value) {
+  if (slipUploaded.value || !draft.value) {
     next()
     return
   }
@@ -266,11 +255,10 @@ onBeforeRouteLeave(async (_to, _from, next) => {
     return
   }
 
-  // ผู้ใช้ยืนยันจะออก -> ยกเลิก hold ทันที คืนสถานะรถเป็น available
   try {
-    await releaseVehicleHold(draft.value.vehicleId)
+    await releaseHold(draft.value.holdId)
   } catch (err) {
-    console.error('releaseVehicleHold on leave error:', err)
+    console.error('releaseHold on leave error:', err)
   }
 
   if (timerHandle) {
@@ -286,14 +274,24 @@ onMounted(() => {
 
   const q = route.query
 
-  if (!q.vehicleId || !q.customerId || !q.pickupDate || !q.returnDate || !q.rentalPrice) {
+  if (
+    !q.holdId ||
+    !q.vehicleId ||
+    !q.customerId ||
+    !q.quantity ||
+    !q.pickupDate ||
+    !q.returnDate ||
+    !q.rentalPrice
+  ) {
     errorMessage.value = 'ไม่พบข้อมูลการจอง กรุณาทำรายการจองใหม่อีกครั้ง'
     return
   }
 
   draft.value = {
+    holdId: Number(q.holdId),
     vehicleId: Number(q.vehicleId),
     customerId: Number(q.customerId),
+    quantity: Number(q.quantity),
     pickupDate: String(q.pickupDate),
     returnDate: String(q.returnDate),
     rentalPrice: Number(q.rentalPrice)

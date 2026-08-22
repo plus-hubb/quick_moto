@@ -590,12 +590,11 @@ export interface Vehicle {
   brand: string
   model: string
   price: number
-  registration_no: string
   engine_size: number | null
   vehicle_type: string | null
-  status: string
   image: string | null
   explanation: string | null
+  quantity: number
 }
  
 /**
@@ -616,13 +615,15 @@ export async function getVehicles(): Promise<Vehicle[]> {
 }
  
 /**
- * ดึงข้อมูลรถเฉพาะที่ว่างให้เช่า (status = 'available')
+ * ดึงข้อมูลรถเฉพาะที่มีคันในคลัง (quantity > 0)
+ * หมายเหตุ: นี่คือ "มีในคลังทั้งหมด" ไม่ใช่ "ว่างในวันที่เจาะจง" — การเช็คว่างจริงตามช่วงวันที่
+ * ต้องเทียบกับจำนวน booking ที่ทับช่วงนั้นด้วย (ดูใน bookingService.ts)
  */
 export async function getAvailableVehicles(): Promise<Vehicle[]> {
   const { data, error } = await supabase
     .from('vehicle')
     .select('*')
-    .eq('status', 'available')
+    .gt('quantity', 0)
     .order('vehicle_id', { ascending: true })
  
   if (error) {

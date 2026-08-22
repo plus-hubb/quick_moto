@@ -28,9 +28,13 @@ export interface Payment {
   payment_slip: string | null
 }
 
-export interface BookedRange {
+export interface BookingHold {
+  hold_id: number
+  vehicle_id: number
+  customer_id: number
   pickup_date: string
   return_date: string
+  expires_at: string
 }
 
 /**
@@ -79,26 +83,9 @@ function generateBookingCode(): string {
 }
 
 /**
- * ดึงช่วงวันที่ถูกจองแล้วทั้งหมดของรถคันนี้ (ใช้เช็คก่อนอนุญาตให้จองซ้อน)
- */
-export async function getBookedRanges(vehicleId: number): Promise<BookedRange[]> {
-  const { data, error } = await supabase
-    .from('booking')
-    .select('pickup_date, return_date')
-    .eq('vehicle_id', vehicleId)
-
-  if (error) {
-    console.error('getBookedRanges error:', error.message)
-    return []
-  }
-
-  return data ?? []
-}
-
-/**
  * เช็คว่าช่วงวันที่ A ทับกับช่วงวันที่ B หรือไม่
  */
-export function isRangeOverlapping(
+function isRangeOverlapping(
   pickupA: string,
   returnA: string,
   pickupB: string,
@@ -108,56 +95,160 @@ export function isRangeOverlapping(
 }
 
 /**
- * เปลี่ยนสถานะรถ
+ * นับจำนวน booking ที่ยัง active อยู่ (ไม่เคยถูกลบ = ยังไม่ถูกยกเลิก) ของรถคันนี้
+ * ที่ช่วงวันที่ทับกับช่วงวันที่ที่ระบุ — ใช้เทียบกับ quantity เพื่อดูว่ายังว่างไหม
  */
-export async function setVehicleStatus(vehicleId: number, status: string): Promise<void> {
-  const { error } = await supabase
-    .from('vehicle')
-    .update({ status })
+export async function getOverlappingBookingCount(
+  vehicleId: number,
+  pickupDate: string,
+  returnDate: string
+): Promise<number> {
+  const { data, error } = await supabase
+    .from('booking')
+    .select('pickup_date, return_date')
     .eq('vehicle_id', vehicleId)
 
   if (error) {
-    console.error('setVehicleStatus error:', error.message)
+    console.error('getOverlappingBookingCount error:', error.message)
+    throw error
+  }
+
+  return (data ?? []).filter((b) =>
+    isRangeOverlapping(pickupDate, returnDate, b.pickup_date, b.return_date)
+  ).length
+}
+
+/**
+ * นับจำนวน "การจองชั่วคราว" (hold) ที่ยังไม่หมดอายุ ของรถคันนี้ ที่ช่วงวันที่ทับกัน
+ * excludeHoldId ใช้ตอน confirm booking เพื่อไม่นับ hold ของตัวเองซ้ำ
+ */
+export async function getActiveHoldCount(
+  vehicleId: number,
+  pickupDate: string,
+  returnDate: string,
+  excludeHoldId?: number
+): Promise<number> {
+  const { data, error } = await supabase
+    .from('booking_hold')
+    .select('hold_id, pickup_date, return_date, expires_at')
+    .eq('vehicle_id', vehicleId)
+    .gt('expires_at', new Date().toISOString())
+
+  if (error) {
+    console.error('getActiveHoldCount error:', error.message)
+    throw error
+  }
+
+  return (data ?? []).filter(
+    (h) =>
+      h.hold_id !== excludeHoldId &&
+      isRangeOverlapping(pickupDate, returnDate, h.pickup_date, h.return_date)
+  ).length
+}
+
+/**
+ * คำนวณจำนวนคันที่ยังว่างสำหรับช่วงวันที่ที่เลือก
+ * = quantity ทั้งหมด - (booking จริงที่ทับช่วงนั้น) - (hold ชั่วคราวที่ยังไม่หมดอายุที่ทับช่วงนั้น)
+ */
+export async function getAvailableUnits(
+  vehicleId: number,
+  quantity: number,
+  pickupDate: string,
+  returnDate: string,
+  excludeHoldId?: number
+): Promise<number> {
+  const [bookingCount, holdCount] = await Promise.all([
+    getOverlappingBookingCount(vehicleId, pickupDate, returnDate),
+    getActiveHoldCount(vehicleId, pickupDate, returnDate, excludeHoldId)
+  ])
+  return Math.max(0, quantity - bookingCount - holdCount)
+}
+
+/**
+ * STEP 1 — ตอนกด "ไปที่ชำระเงิน": สร้าง hold ชั่วคราว (อายุ 5 นาที)
+ * เพื่อหักจำนวนคงเหลือทันที โดยที่ "ยังไม่บันทึกลงตาราง booking"
+ */
+export async function createHold(input: {
+  vehicleId: number
+  customerId: number
+  quantity: number
+  pickupDate: string
+  returnDate: string
+}): Promise<BookingHold> {
+  const availableUnits = await getAvailableUnits(
+    input.vehicleId,
+    input.quantity,
+    input.pickupDate,
+    input.returnDate
+  )
+
+  if (availableUnits <= 0) {
+    throw new Error('ขออภัย รถไม่พร้อมสำหรับช่วงวันที่นี้แล้ว มีคนอื่นจองไปก่อน กรุณาเลือกวันที่อื่น')
+  }
+
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString()
+
+  const { data, error } = await supabase
+    .from('booking_hold')
+    .insert({
+      vehicle_id: input.vehicleId,
+      customer_id: input.customerId,
+      pickup_date: input.pickupDate,
+      return_date: input.returnDate,
+      expires_at: expiresAt
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('createHold error:', error.message)
+    throw error
+  }
+
+  return data
+}
+
+/**
+ * ใช้เมื่อหมดเวลา 5 นาที หรือลูกค้ากดย้อนกลับก่อนแนบสลิป
+ * ลบ hold ทิ้ง ทำให้คันนี้ในช่วงวันที่นี้กลับมาว่างทันที
+ */
+export async function releaseHold(holdId: number): Promise<void> {
+  const { error } = await supabase
+    .from('booking_hold')
+    .delete()
+    .eq('hold_id', holdId)
+
+  if (error) {
+    console.error('releaseHold error:', error.message)
     throw error
   }
 }
 
 /**
- * STEP 1 — ตอนกด "จอง": ยังไม่บันทึกลงตาราง booking
- * แค่ hold รถไว้ก่อนโดยเปลี่ยนสถานะเป็น "unavailable" ชั่วคราว
- * (ยังไม่มีแถวในตาราง booking จนกว่าจะแนบสลิปสำเร็จ)
- */
-export async function holdVehicle(vehicleId: number): Promise<void> {
-  await setVehicleStatus(vehicleId, 'unavailable')
-}
-
-/**
- * ใช้ตอนหมดเวลา 5 นาทีแล้วลูกค้ายังไม่แนบสลิป
- * คืนสถานะรถกลับเป็น "available" (ไม่มีอะไรต้องลบ เพราะยังไม่เคย insert booking)
- */
-export async function releaseVehicleHold(vehicleId: number): Promise<void> {
-  await setVehicleStatus(vehicleId, 'available')
-}
-
-/**
- * STEP 2 — ตอนแนบสลิปสำเร็จ: บันทึกรายการจองจริงลงตาราง booking
- * (status = รออนุมัติ, มัดจำ 500 บาทตายตัว) — รถยังคง "unavailable" ต่อไปตลอด
+ * STEP 2 — ตอนแนบสลิปสำเร็จ: แปลง hold ชั่วคราวให้กลายเป็นรายการจองจริงในตาราง booking
+ * (status = "รออนุมัติ", มัดจำ 500 บาทตายตัว)
  */
 export async function confirmBooking(input: {
+  holdId: number
   customerId: number
   vehicleId: number
+  quantity: number
   pickupDate: string
   returnDate: string
   rentalPrice: number
 }): Promise<Booking> {
-  // เช็คซ้ำอีกครั้งก่อน insert จริง กันเคสที่มีคนอื่นจองแทรกระหว่างที่ผู้ใช้กรอกฟอร์ม/ชำระเงินอยู่
-  const existingRanges = await getBookedRanges(input.vehicleId)
-  const hasOverlap = existingRanges.some((r) =>
-    isRangeOverlapping(input.pickupDate, input.returnDate, r.pickup_date, r.return_date)
+  // ลบ hold ของตัวเองออกก่อน แล้วเช็คว่างอีกครั้ง (ไม่นับ hold ตัวเองซ้ำ)
+  await releaseHold(input.holdId)
+
+  const availableUnits = await getAvailableUnits(
+    input.vehicleId,
+    input.quantity,
+    input.pickupDate,
+    input.returnDate
   )
 
-  if (hasOverlap) {
-    throw new Error('ช่วงวันที่เลือกถูกจองไปแล้ว กรุณาเลือกวันที่อื่น')
+  if (availableUnits <= 0) {
+    throw new Error('ช่วงวันที่เลือกเต็มแล้ว กรุณาทำการจองใหม่อีกครั้ง')
   }
 
   const { data, error } = await supabase
@@ -176,12 +267,59 @@ export async function confirmBooking(input: {
     .single()
 
   if (error) {
-    // 23P01 = exclusion_violation จาก PostgreSQL exclusion constraint (booking_no_overlap)
-    if ((error as { code?: string }).code === '23P01') {
-      throw new Error('ช่วงวันที่เลือกถูกจองไปแล้ว กรุณาเลือกวันที่อื่น')
-    }
     console.error('confirmBooking error:', error.message)
     throw error
+  }
+
+  return data
+}
+
+/**
+ * ดึงข้อมูลลูกค้าทีละคน (ใช้แสดง "จองโดย" ในใบรับรองการจอง)
+ */
+export async function getCustomerById(customerId: number): Promise<Customer | null> {
+  const { data, error } = await supabase
+    .from('customer')
+    .select('*')
+    .eq('customer_id', customerId)
+    .single()
+
+  if (error) {
+    console.error('getCustomerById error:', error.message)
+    return null
+  }
+
+  return data
+}
+
+/**
+ * ยกเลิกการจองที่ยืนยันแล้ว (เปลี่ยน status เป็น "ยกเลิก" ไม่ลบแถวทิ้ง เพื่อเก็บประวัติไว้)
+ */
+export async function cancelConfirmedBooking(bookingId: number): Promise<void> {
+  const { error } = await supabase
+    .from('booking')
+    .update({ status: 'ยกเลิก' })
+    .eq('booking_id', bookingId)
+
+  if (error) {
+    console.error('cancelConfirmedBooking error:', error.message)
+    throw error
+  }
+}
+
+/**
+ * ดึงรายการจองทีละรายการ (ใช้ในหน้าชำระเงิน / หน้าใบรับรองการจอง)
+ */
+export async function getBookingById(bookingId: number): Promise<Booking | null> {
+  const { data, error } = await supabase
+    .from('booking')
+    .select('*')
+    .eq('booking_id', bookingId)
+    .single()
+
+  if (error) {
+    console.error('getBookingById error:', error.message)
+    return null
   }
 
   return data
