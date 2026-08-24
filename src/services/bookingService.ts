@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import type { Vehicle } from './customerService'
 
 export interface Customer {
   customer_id: number
@@ -105,7 +106,7 @@ export async function getOverlappingBookingCount(
 ): Promise<number> {
   const { data, error } = await supabase
     .from('booking')
-    .select('pickup_date, return_date')
+    .select('pickup_date, return_date, status')
     .eq('vehicle_id', vehicleId)
 
   if (error) {
@@ -113,8 +114,10 @@ export async function getOverlappingBookingCount(
     throw error
   }
 
-  return (data ?? []).filter((b) =>
-    isRangeOverlapping(pickupDate, returnDate, b.pickup_date, b.return_date)
+  return (data ?? []).filter(
+    (b) =>
+      normalizeStatus(b.status) !== 'ยกเลิก' &&
+      isRangeOverlapping(pickupDate, returnDate, b.pickup_date, b.return_date)
   ).length
 }
 
@@ -325,9 +328,76 @@ export async function getBookingById(bookingId: number): Promise<Booking | null>
   return data
 }
 
+export interface BookingWithVehicle extends Booking {
+  vehicle: Vehicle
+}
+
 /**
- * บันทึกหลักฐานการชำระเงิน (สลิป) ลงตาราง payment
+ * ทำ status ให้เป็นรูปแบบมาตรฐานก่อนเทียบ/แสดงผล
+ * เผื่อเคสพิมพ์ "เเ" (สระเอ 2 ตัว) แทน "แ" (สระแอตัวเดียว) ตอนแก้ข้อมูลตรงๆ ใน Supabase Table Editor
+ * ซึ่งมองด้วยตาเปล่าจะเหมือนกันเป๊ะ แต่เป็นคนละ string ทำให้เทียบไม่ตรงกัน
  */
+export function normalizeStatus(status: string): string {
+  return status.replace(/เเ/g, 'แ').trim()
+}
+
+/**
+ * ดึงรายการจองทั้งหมดของลูกค้าคนนี้ พร้อมข้อมูลรถ (join ผ่าน foreign key vehicle_id)
+ */
+export async function getCustomerBookings(customerId: number): Promise<BookingWithVehicle[]> {
+  const { data, error } = await supabase
+    .from('booking')
+    .select('*, vehicle:vehicle_id(*)')
+    .eq('customer_id', customerId)
+    .order('booking_date', { ascending: false })
+
+  if (error) {
+    console.error('getCustomerBookings error:', error.message)
+    throw error
+  }
+
+  return (data ?? []) as unknown as BookingWithVehicle[]
+}
+
+/**
+ * ดึงรายละเอียดการจอง 1 รายการ พร้อมข้อมูลรถ (ใช้ในหน้ารายละเอียด/ใบรับรองการจอง)
+ */
+export async function getBookingDetail(bookingId: number): Promise<BookingWithVehicle | null> {
+  const { data, error } = await supabase
+    .from('booking')
+    .select('*, vehicle:vehicle_id(*)')
+    .eq('booking_id', bookingId)
+    .single()
+
+  if (error) {
+    console.error('getBookingDetail error:', error.message)
+    return null
+  }
+
+  return data as unknown as BookingWithVehicle
+}
+
+/**
+ * ยกเลิกการจอง (เปลี่ยนสถานะเป็น "ยกเลิก" — ไม่ลบแถวทิ้ง เพื่อให้ยังอยู่ในประวัติได้)
+ */
+export async function cancelBookingRecord(bookingId: number): Promise<void> {
+  const { error, data } = await supabase
+    .from('booking')
+    .update({ status: 'ยกเลิก' })
+    .eq('booking_id', bookingId)
+    .select('booking_id')
+
+  if (error) {
+    console.error('cancelBookingRecord error:', error.message)
+    throw new Error(error.message)
+  }
+
+  if (!data || data.length === 0) {
+    // update ไม่ error แต่ไม่มีแถวไหนถูกแก้เลย — ปกติแปลว่าโดน RLS policy บล็อกอยู่
+    // (ยังไม่มี UPDATE policy ให้ authenticated บนตาราง booking)
+    throw new Error('ไม่มีสิทธิ์แก้ไขรายการนี้ (ตรวจสอบ RLS policy ของตาราง booking)')
+  }
+}
 export async function createPayment(input: {
   bookingId: number
   slipUrl: string

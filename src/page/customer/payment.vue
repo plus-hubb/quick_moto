@@ -117,9 +117,9 @@ const slipUploaded = ref(false)
 const isUploading = ref(false)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
-// booking_code จะมีค่าก็ต่อเมื่อ insert booking สำเร็จแล้ว (หลังแนบสลิป)
-const createdBookingCode = ref<string | null>(null)
+// booking_id / booking_code จะมีค่าก็ต่อเมื่อ insert booking สำเร็จแล้วเท่านั้น (หลังแนบสลิป)
 const createdBookingId = ref<number | null>(null)
+const createdBookingCode = ref<string | null>(null)
 
 const expiresAt = Number(route.query.expires) || Date.now() + 5 * 60 * 1000
 const remainingMs = ref(expiresAt - Date.now())
@@ -189,8 +189,8 @@ const handleFileSelected = async (event: Event) => {
       returnDate: draft.value.returnDate,
       rentalPrice: draft.value.rentalPrice
     })
-    createdBookingCode.value = booking.booking_code
     createdBookingId.value = booking.booking_id
+    createdBookingCode.value = booking.booking_code
 
     // 2) อัพโหลดไฟล์สลิปขึ้น Supabase Storage (bucket เดียวกับรูปรถ เก็บในโฟลเดอร์ payment/)
     const filePath = `payment/${booking.booking_code}-${Date.now()}-${file.name}`
@@ -226,7 +226,7 @@ const handleFileSelected = async (event: Event) => {
 
 const handleContinue = () => {
   if (createdBookingId.value) {
-    router.push(`/home`)
+    router.push(`/bookings/${createdBookingId.value}`)
   } else {
     router.push('/home')
   }
