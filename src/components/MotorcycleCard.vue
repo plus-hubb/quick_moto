@@ -55,20 +55,36 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { Vehicle } from '../services/customerService'
 
 const props = defineProps<{
   vehicle: Vehicle
+  pickupDate?: string
+  returnDate?: string
 }>()
 
+const route = useRoute()
 const router = useRouter()
 
 // ใส่ comma คั่นหลักพันให้ราคาอ่านง่าย เช่น 1200 -> 1,200
 const formattedPrice = computed(() => Number(props.vehicle.price).toLocaleString('en-US'))
 
 // กดการ์ดแล้วไปหน้ารายละเอียดของรถคันนั้น
+// ให้ความสำคัญกับวันที่ที่ส่งมาทาง props ก่อน (แม่นยำสุด เพราะมาจาก state จริงของฟอร์มค้นหา)
+// ถ้าไม่มี props ค่อย fallback ไปดูจาก query ของ URL ปัจจุบันแทน
 const goToDetail = () => {
-  router.push(`/vehicle/${props.vehicle.vehicle_id}`)
+  const query: Record<string, string> = {}
+
+  const pickup = props.pickupDate || (route.query.pickupDate as string) || ''
+  const ret = props.returnDate || (route.query.returnDate as string) || ''
+
+  if (pickup) query.pickupDate = pickup
+  if (ret) query.returnDate = ret
+
+  router.push({
+    path: `/vehicle/${props.vehicle.vehicle_id}`,
+    query
+  })
 }
 </script>

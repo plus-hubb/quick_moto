@@ -10,6 +10,7 @@ import BookingView from '../page/customer/booking.vue'
 import PaymentView from '../page/customer/payment.vue'
 import BookingsView from '../page/customer/bookings.vue'
 import BookingDetailView from '../page/customer/booking-detail.vue'
+import SearchView from '../page/customer/search.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -59,6 +60,11 @@ const routes: Array<RouteRecordRaw> = [
     name: 'booking-detail',
     component: BookingDetailView,
   },
+  {
+  path: '/search',
+  name: 'search',
+  component: SearchView,
+},
 ]
 
 const router = createRouter({

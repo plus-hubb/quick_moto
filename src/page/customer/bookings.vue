@@ -1,169 +1,273 @@
 <template>
-  <div class="bg-slate-100 min-h-screen font-kanit pb-24">
-    <div class="w-full max-w-md mx-auto px-4 py-6">
+  <div class="bg-slate-100 min-h-screen font-kanit pb-28">
 
-      <!-- Header -->
-      <header class="mb-5">
-        <h1 class="text-2xl font-bold text-slate-900">ประวัติการจองรถจักรยานยนต์</h1>
-      </header>
+    <!-- Top Bar -->
+    <div class="bg-[#051329] px-4 py-3">
+      <span class="inline-block bg-white/10 text-white text-sm font-medium px-5 py-1.5 rounded-full border border-white/20">
+        จองรถ
+      </span>
+    </div>
 
-      <!-- Tabs -->
-      <div class="bg-white rounded-xl p-1 flex gap-1 mb-6 shadow-sm border border-slate-100">
-        <button
-          type="button"
-          @click="activeTab = 'active'"
-          :class="[
-            'flex-1 text-sm font-medium py-2.5 rounded-lg transition-all',
-            activeTab === 'active' ? 'bg-[#051329] text-white' : 'text-slate-500'
-          ]"
-        >
-          การจองที่ใช้งานอยู่
-        </button>
-        <button
-          type="button"
-          @click="activeTab = 'history'"
-          :class="[
-            'flex-1 text-sm font-medium py-2.5 rounded-lg transition-all',
-            activeTab === 'history' ? 'bg-[#051329] text-white' : 'text-slate-500'
-          ]"
-        >
-          ประวัติการจองที่เสร็จสิ้น
-        </button>
-      </div>
+    <!-- Loading -->
+    <div v-if="isLoading" class="text-center text-slate-400 text-sm py-16">
+      กำลังโหลดข้อมูล...
+    </div>
 
-      <!-- Loading -->
-      <div v-if="isLoading" class="text-center text-slate-400 text-sm py-10">
-        กำลังโหลดข้อมูล...
-      </div>
+    <!-- Error -->
+    <div v-else-if="errorMessage" class="text-center text-red-400 text-sm py-16">
+      {{ errorMessage }}
+    </div>
 
-      <!-- Error -->
-      <div v-else-if="errorMessage" class="text-center text-red-400 text-sm py-10">
-        {{ errorMessage }}
-      </div>
+    <div v-else-if="vehicle" class="w-full max-w-md mx-auto px-4">
 
-      <!-- Empty -->
-      <div v-else-if="filteredBookings.length === 0" class="text-center text-slate-400 text-sm py-10">
-        ไม่มีรายการจองในหมวดนี้
-      </div>
-
-      <!-- List -->
-      <div v-else class="space-y-4">
-        <div
-          v-for="booking in filteredBookings"
-          :key="booking.booking_id"
-          class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"
-        >
-          <div class="flex gap-3 mb-3">
-            <div class="w-20 h-20 bg-slate-200 rounded-xl overflow-hidden shrink-0">
-              <img
-                v-if="booking.vehicle?.image"
-                :src="booking.vehicle.image"
-                :alt="`${booking.vehicle.brand} ${booking.vehicle.model}`"
-                class="w-full h-full object-cover"
-              >
-              <div v-else class="w-full h-full flex items-center justify-center text-slate-300">
-                <i class="fa-solid fa-motorcycle text-xl"></i>
-              </div>
-            </div>
-
-            <div class="flex-1 min-w-0">
-              <div class="flex items-start justify-between gap-2">
-                <h3 class="text-base font-bold text-slate-900 leading-snug">
-                  {{ booking.vehicle?.brand }} {{ booking.vehicle?.model }}
-                </h3>
-                <span
-                  class="text-xs font-medium px-2.5 py-1 rounded-full shrink-0"
-                  :class="statusBadge(booking.status).class"
-                >
-                  {{ statusBadge(booking.status).label }}
-                </span>
-              </div>
-              <p class="text-xs text-slate-500 mt-0.5">
-                {{ booking.vehicle?.engine_size ?? '-' }} cc {{ booking.vehicle?.vehicle_type || '' }}
-              </p>
-              <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                <i class="fa-regular fa-calendar"></i>
-                {{ formatDateTh(booking.pickup_date) }} - {{ formatDateTh(booking.return_date) }}
-              </p>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between pt-3 border-t border-slate-100">
-            <div>
-              <p class="text-xs text-slate-400">ยอดรวมสุทธิ</p>
-              <p class="text-lg font-bold text-slate-900">฿{{ formatPrice(booking.rental_price) }}</p>
-            </div>
-            <button
-              type="button"
-              @click="router.push(`/bookings/${booking.booking_id}`)"
-              class="bg-[#051329] hover:bg-[#0a1f3d] text-white text-sm font-medium px-4 py-2 rounded-xl transition-all active:scale-[0.98]"
-            >
-              ดูรายละเอียด
-            </button>
+      <!-- Vehicle Image + Info -->
+      <div class="pt-5">
+        <div class="w-full h-48 sm:h-56 bg-slate-200 rounded-2xl overflow-hidden">
+          <img
+            v-if="vehicle.image"
+            :src="vehicle.image"
+            :alt="`${vehicle.brand} ${vehicle.model}`"
+            class="w-full h-full object-cover"
+          >
+          <div v-else class="w-full h-full flex items-center justify-center text-slate-300">
+            <i class="fa-solid fa-motorcycle text-4xl"></i>
           </div>
         </div>
       </div>
 
-    </div>
-  </div>
+      <div class="py-5">
+        <h1 class="text-xl font-bold text-slate-900">{{ vehicle.brand }} {{ vehicle.model }}</h1>
+        <p class="text-sm text-slate-500 mt-0.5">{{ vehicle.vehicle_type || '-' }}</p>
+      </div>
 
-  <BottomNavigation active="bookings" />
+      <!-- วันที่รับ-คืนรถ (ปฏิทินแบบเดียวกับ home.vue) -->
+      <div class="grid grid-cols-2 gap-3 mb-2">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">วันรับรถ</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+              <i class="fa-regular fa-calendar text-sm"></i>
+            </span>
+            <input
+              v-model="form.pickupDate"
+              type="date"
+              :min="todayStr"
+              class="w-full pl-9 pr-2 py-2.5 bg-white border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+              :class="isDateRangeAvailable ? 'border-slate-200' : 'border-red-300'"
+            >
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">วันคืนรถ</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+              <i class="fa-regular fa-calendar text-sm"></i>
+            </span>
+            <input
+              v-model="form.returnDate"
+              type="date"
+              :min="form.pickupDate || todayStr"
+              class="w-full pl-9 pr-2 py-2.5 bg-white border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+              :class="isDateRangeAvailable ? 'border-slate-200' : 'border-red-300'"
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- แสดงจำนวนคันคงเหลือสำหรับช่วงวันที่ที่เลือก -->
+      <p v-if="isCheckingAvailability" class="text-xs text-slate-400 mb-6">กำลังเช็คจำนวนรถว่าง...</p>
+      <p v-else-if="!isDateRangeAvailable" class="text-xs text-red-500 mb-6 flex items-center gap-1.5">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        ช่วงวันที่เลือกเต็มแล้ว กรุณาเลือกวันที่อื่น
+      </p>
+      <p v-else class="text-xs text-emerald-600 mb-6 flex items-center gap-1.5">
+        <i class="fa-solid fa-circle-check"></i>
+        เหลือ {{ availableUnits }} คัน สำหรับช่วงวันที่นี้
+      </p>
+
+      <!-- ข้อมูลผู้ขับขี่ -->
+      <section class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-6">
+        <h2 class="text-base font-bold text-slate-900 mb-4">ข้อมูลผู้ขับขี่</h2>
+
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">ชื่อ-นามสกุล (ตามใบขับขี่)</label>
+            <input
+              v-model="form.fullName"
+              type="text"
+              placeholder="กรอกชื่อ-นามสกุล"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
+            >
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">เบอร์โทรศัพท์</label>
+            <input
+              v-model="form.phone"
+              type="tel"
+              placeholder="08X-XXX-XXXX"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
+            >
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">อีเมล</label>
+            <input
+              v-model="form.email"
+              type="email"
+              placeholder="example@email.com"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- ข้อตกลงการเช่ารถ -->
+      <section class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-6">
+        <div class="flex items-center gap-2 mb-3">
+          <i class="fa-regular fa-file-lines text-slate-700"></i>
+          <h2 class="text-base font-bold text-slate-900">ข้อตกลงการเช่ารถจักรยานยนต์</h2>
+        </div>
+
+        <div class="text-sm text-slate-600 leading-relaxed space-y-2" :class="{ 'line-clamp-4': !showFullTerms }">
+          <p>1. <strong>ใบอนุญาตขับขี่</strong>: ผู้เช่าต้องมีใบอนุญาตขับขี่รถจักรยานยนต์ที่ยังไม่หมดอายุและมีอายุการใช้งานไม่น้อยกว่า 1 ปี</p>
+          <p>2. <strong>อุปกรณ์ความปลอดภัย</strong>: ผู้เช่าต้องสวมหมวกนิรภัย (Helmet) ตลอดเวลาขณะขับขี่ทุกครั้ง</p>
+          <p>3. <strong>การคืนรถ</strong>: รถต้องถูกคืนตามวันและเวลาที่กำหนดในสภาพเรียบร้อยเหมือนตอนรับรถ หากคืนล่าช้าจะมีค่าปรับตามอัตราที่บริษัทกำหนด</p>
+        </div>
+
+        <button
+          type="button"
+          @click="showFullTerms = !showFullTerms"
+          class="text-sm font-medium text-slate-900 underline mt-2"
+        >
+          {{ showFullTerms ? 'ย่อข้อความ' : 'อ่านทั้งหมด' }}
+        </button>
+      </section>
+
+    </div>
+
+    <!-- Bottom Bar -->
+    <div
+      v-if="vehicle"
+      class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-100 px-4 py-4"
+    >
+      <div class="w-full max-w-md mx-auto flex items-center justify-between gap-4">
+        <div>
+          <p class="text-xs text-slate-400">ราคารวมที่ต้องชำระ</p>
+          <p class="text-lg font-bold text-slate-900">
+            ฿{{ formattedTotal }} <span class="text-xs font-normal text-slate-400">/ {{ rentalDays }} วัน</span>
+          </p>
+        </div>
+        <button
+          @click="handleSubmitBooking"
+          :disabled="isSubmitting || !isDateRangeAvailable || isCheckingAvailability"
+          class="bg-[#051329] hover:bg-[#0a1f3d] disabled:opacity-50 text-white font-medium py-3 px-6 rounded-xl shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2 transition-all active:scale-[0.99] shrink-0"
+        >
+          <span>{{ isSubmitting ? 'กำลังจอง...' : !isDateRangeAvailable ? 'เต็มแล้ว' : 'ไปที่ชำระเงิน' }}</span>
+          <i class="fa-solid fa-arrow-right text-sm"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import BottomNavigation from '../../components/BottomNavigation.vue'
-import { getCurrentCustomer, getCustomerBookings, normalizeStatus, type BookingWithVehicle } from '../../services/bookingService'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { getVehicleById, type Vehicle } from '../../services/customerService'
+import {
+  getCurrentCustomer,
+  calcRentalDays,
+  getAvailableUnits,
+  createHold
+} from '../../services/bookingService'
 
+const route = useRoute()
 const router = useRouter()
 
-const bookings = ref<BookingWithVehicle[]>([])
-const activeTab = ref<'active' | 'history'>('active')
+const vehicle = ref<Vehicle | null>(null)
+const customerId = ref<number | null>(null)
 const isLoading = ref(false)
+const isSubmitting = ref(false)
 const errorMessage = ref('')
+const showFullTerms = ref(false)
 
-// สถานะที่ถือว่ายัง "ใช้งานอยู่" vs "เสร็จสิ้นแล้ว" (รวมยกเลิกไว้ในประวัติด้วย)
-const ACTIVE_STATUSES = ['รออนุมัติ', 'อนุมัติแล้ว']
-const HISTORY_STATUSES = ['เสร็จสิ้น', 'ยกเลิก']
+const availableUnits = ref(0)
+const isCheckingAvailability = ref(false)
 
-const filteredBookings = computed(() => {
-  const statuses = activeTab.value === 'active' ? ACTIVE_STATUSES : HISTORY_STATUSES
-  return bookings.value.filter((b) => statuses.includes(normalizeStatus(b.status)))
+const todayStr = new Date().toISOString().split('T')[0]
+const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+
+// ถ้ามีวันที่ส่งมาจากหน้า search/detail (ผ่าน query) ใช้ค่านั้นเป็นค่าเริ่มต้นแทน
+const initialPickupDate = (route.query.pickupDate as string) || todayStr
+const initialReturnDate = (route.query.returnDate as string) || tomorrowStr
+
+const form = reactive({
+  pickupDate: initialPickupDate,
+  returnDate: initialReturnDate,
+  fullName: '',
+  phone: '',
+  email: ''
 })
 
-const statusBadge = (rawStatus: string) => {
-  const status = normalizeStatus(rawStatus)
-  switch (status) {
-    case 'รออนุมัติ':
-      return { label: 'กำลังดำเนินการ', class: 'bg-amber-100 text-amber-700' }
-    case 'อนุมัติแล้ว':
-      return { label: 'ยืนยันแล้ว', class: 'bg-emerald-100 text-emerald-700' }
-    case 'เสร็จสิ้น':
-      return { label: 'เสร็จสิ้น', class: 'bg-slate-200 text-slate-600' }
-    case 'ยกเลิก':
-      return { label: 'ยกเลิกแล้ว', class: 'bg-red-100 text-red-600' }
-    default:
-      return { label: status, class: 'bg-slate-200 text-slate-600' }
+const rentalDays = computed(() => calcRentalDays(form.pickupDate, form.returnDate))
+
+const totalPrice = computed(() => {
+  if (!vehicle.value) return 0
+  return rentalDays.value * Number(vehicle.value.price)
+})
+
+const formattedTotal = computed(() => totalPrice.value.toLocaleString('en-US'))
+
+const isDateRangeAvailable = computed(() => availableUnits.value > 0)
+
+// เช็คจำนวนคันว่างใหม่ทุกครั้งที่เปลี่ยนวันที่
+const refreshAvailability = async () => {
+  if (!vehicle.value) return
+  isCheckingAvailability.value = true
+  try {
+    availableUnits.value = await getAvailableUnits(
+      vehicle.value.vehicle_id,
+      vehicle.value.quantity,
+      form.pickupDate,
+      form.returnDate
+    )
+  } finally {
+    isCheckingAvailability.value = false
   }
 }
 
-const formatPrice = (price: number) => Number(price).toLocaleString('en-US')
+watch(() => [form.pickupDate, form.returnDate], () => {
+  refreshAvailability()
+})
 
-const formatDateTh = (dateStr: string) =>
-  new Date(dateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
-
-const loadBookings = async () => {
+const loadData = async () => {
   isLoading.value = true
   errorMessage.value = ''
 
+  const vehicleId = Number(route.params.id)
+
   try {
-    const customer = await getCurrentCustomer()
-    if (!customer) {
-      errorMessage.value = 'กรุณาเข้าสู่ระบบก่อน'
+    const [vehicleData, customerData] = await Promise.all([
+      getVehicleById(vehicleId),
+      getCurrentCustomer()
+    ])
+
+    if (!vehicleData) {
+      errorMessage.value = 'ไม่พบข้อมูลรถคันนี้'
       return
     }
-    bookings.value = await getCustomerBookings(customer.customer_id)
+    vehicle.value = vehicleData
+
+    if (customerData) {
+      customerId.value = customerData.customer_id
+      form.fullName = customerData.name ?? ''
+      form.phone = customerData.phone ?? ''
+      form.email = customerData.email ?? ''
+    } else {
+      errorMessage.value = 'กรุณาเข้าสู่ระบบก่อนทำการจอง'
+    }
+
+    await refreshAvailability()
   } catch (err) {
     errorMessage.value = 'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
   } finally {
@@ -171,8 +275,63 @@ const loadBookings = async () => {
   }
 }
 
+// ตอนกด "ไปที่ชำระเงิน": สร้าง hold ชั่วคราว (หักจำนวนคงเหลือทันที) แล้วส่งไปหน้า payment
+// จะ insert ลงตาราง booking จริงๆ ก็ต่อเมื่อแนบสลิปสำเร็จเท่านั้น (ดูใน payment.vue)
+const handleSubmitBooking = async () => {
+  if (!vehicle.value || !customerId.value) {
+    alert('ไม่พบข้อมูลลูกค้า กรุณาเข้าสู่ระบบก่อนทำการจอง')
+    return
+  }
+
+  if (!form.fullName || !form.phone) {
+    alert('กรุณากรอกข้อมูลผู้ขับขี่ให้ครบถ้วน')
+    return
+  }
+
+  if (new Date(form.returnDate) < new Date(form.pickupDate)) {
+    alert('วันคืนรถต้องไม่ก่อนวันรับรถ')
+    return
+  }
+
+  if (!isDateRangeAvailable.value) {
+    alert('ช่วงวันที่เลือกเต็มแล้ว กรุณาเลือกวันที่อื่น')
+    return
+  }
+
+  isSubmitting.value = true
+
+  try {
+    const hold = await createHold({
+      vehicleId: vehicle.value.vehicle_id,
+      customerId: customerId.value,
+      quantity: vehicle.value.quantity,
+      pickupDate: form.pickupDate,
+      returnDate: form.returnDate
+    })
+
+    const query = new URLSearchParams({
+      holdId: String(hold.hold_id),
+      vehicleId: String(vehicle.value.vehicle_id),
+      customerId: String(customerId.value),
+      quantity: String(vehicle.value.quantity),
+      pickupDate: form.pickupDate,
+      returnDate: form.returnDate,
+      rentalPrice: String(totalPrice.value),
+      expires: String(new Date(hold.expires_at).getTime())
+    })
+
+    router.push(`/payment?${query.toString()}`)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'จองรถไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+    alert(message)
+    await refreshAvailability()
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
 onMounted(() => {
-  loadBookings()
+  loadData()
 })
 </script>
 
@@ -181,5 +340,12 @@ onMounted(() => {
 
 .font-kanit {
   font-family: 'Kanit', sans-serif;
+}
+
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>

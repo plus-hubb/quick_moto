@@ -144,8 +144,15 @@ const loadVehicle = async () => {
 
 const handleBookNow = () => {
   if (!vehicle.value) return
-  // TODO: เชื่อมกับหน้าจองรถ / ตาราง booking จริง
-  router.push(`/booking/${vehicle.value.vehicle_id}`)
+  // ส่งต่อวันที่รับ-คืนที่มากับ query (เช่นมาจากหน้า search) ไปให้หน้าจองใช้เป็นค่าเริ่มต้น
+  const query: Record<string, string> = {}
+  if (route.query.pickupDate) query.pickupDate = String(route.query.pickupDate)
+  if (route.query.returnDate) query.returnDate = String(route.query.returnDate)
+
+  router.push({
+    path: `/booking/${vehicle.value.vehicle_id}`,
+    query
+  })
 }
 
 onMounted(() => {

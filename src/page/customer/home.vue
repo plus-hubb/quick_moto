@@ -24,7 +24,7 @@
               <input
                 v-model="searchForm.keyword"
                 type="text"
-                placeholder="เกียร์อัตโนมัติ,125cc"
+                placeholder="honda, yamaha, 110cc, 125cc"
                 class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
               >
             </div>
@@ -141,21 +141,21 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import MotorcycleCard from '../../components/MotorcycleCard.vue'
 import BottomNavigation from '../../components/BottomNavigation.vue'
 import { getVehicles, type Vehicle } from '../../services/customerService'
 
-// ฟอร์มค้นหา
+const router = useRouter()
+
+// ฟอร์มค้นหา (กดค้นหาแล้วจะพาไปหน้า /search พร้อมค่าที่กรอกไว้ — ผลลัพธ์การค้นหาจริงๆ ไปแสดงที่นั่น)
 const searchForm = reactive({
   keyword: '',
   pickupDate: '',
   returnDate: ''
 })
 
-// คำค้นหาที่ยืนยันแล้ว (อัปเดตตอนกดปุ่มค้นหาเท่านั้น)
-const appliedKeyword = ref('')
-
-// ตัวกรองระบบเกียร์ที่เลือก
+// ตัวกรองระบบเกียร์ที่เลือก (ใช้กรอง "รถแนะนำสำหรับคุณ" ในหน้านี้เท่านั้น ไม่เกี่ยวกับการค้นหา)
 const selectedTransmission = ref<'Automatic' | 'Manual'>('Automatic')
 
 // State สำหรับข้อมูลรถจาก Supabase
@@ -176,25 +176,25 @@ const loadVehicles = async () => {
   }
 }
 
-// กรองตามระบบเกียร์ (vehicle_type) + คำค้นหา
+// กรอง "รถแนะนำสำหรับคุณ" ตามระบบเกียร์เท่านั้น
 const filteredVehicles = computed(() => {
   return vehicles.value.filter((v) => {
-    const matchesTransmission =
-      (v.vehicle_type ?? '').toLowerCase().startsWith(selectedTransmission.value.toLowerCase().slice(0, 4))
-
-    const keyword = appliedKeyword.value.trim().toLowerCase()
-    const matchesKeyword =
-      !keyword ||
-      v.brand.toLowerCase().includes(keyword) ||
-      v.model.toLowerCase().includes(keyword) ||
-      (v.vehicle_type ?? '').toLowerCase().includes(keyword)
-
-    return matchesTransmission && matchesKeyword
+    const type = (v.vehicle_type ?? '').toLowerCase()
+    return selectedTransmission.value === 'Automatic' ? type.includes('auto') : type.includes('man')
   })
 })
 
+// กด "ค้นหารถ" แล้วพาไปหน้า /search พร้อมส่งคำค้นหา/วันที่/ระบบเกียร์ไปด้วยผ่าน query
 const handleSearch = () => {
-  appliedKeyword.value = searchForm.keyword
+  router.push({
+    path: '/search',
+    query: {
+      ...(searchForm.keyword ? { keyword: searchForm.keyword } : {}),
+      ...(searchForm.pickupDate ? { pickupDate: searchForm.pickupDate } : {}),
+      ...(searchForm.returnDate ? { returnDate: searchForm.returnDate } : {}),
+      transmission: selectedTransmission.value
+    }
+  })
 }
 
 onMounted(() => {

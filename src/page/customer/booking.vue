@@ -197,9 +197,13 @@ const isCheckingAvailability = ref(false)
 const todayStr = new Date().toISOString().split('T')[0]
 const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0]
 
+// ถ้ามีวันที่ส่งมาจากหน้า search/detail (ผ่าน query) ใช้ค่านั้นเป็นค่าเริ่มต้นแทน
+const initialPickupDate = (route.query.pickupDate as string) || todayStr
+const initialReturnDate = (route.query.returnDate as string) || tomorrowStr
+
 const form = reactive({
-  pickupDate: todayStr,
-  returnDate: tomorrowStr,
+  pickupDate: initialPickupDate,
+  returnDate: initialReturnDate,
   fullName: '',
   phone: '',
   email: ''

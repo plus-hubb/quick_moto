@@ -596,7 +596,7 @@ export interface Vehicle {
   explanation: string | null
   quantity: number
 }
- 
+
 /**
  * ดึงข้อมูลรถทั้งหมดจากตาราง vehicle
  */
@@ -605,15 +605,15 @@ export async function getVehicles(): Promise<Vehicle[]> {
     .from('vehicle')
     .select('*')
     .order('vehicle_id', { ascending: true })
- 
+
   if (error) {
     console.error('getVehicles error:', error.message)
     throw error
   }
- 
+
   return data ?? []
 }
- 
+
 /**
  * ดึงข้อมูลรถเฉพาะที่มีคันในคลัง (quantity > 0)
  * หมายเหตุ: นี่คือ "มีในคลังทั้งหมด" ไม่ใช่ "ว่างในวันที่เจาะจง" — การเช็คว่างจริงตามช่วงวันที่
@@ -625,29 +625,34 @@ export async function getAvailableVehicles(): Promise<Vehicle[]> {
     .select('*')
     .gt('quantity', 0)
     .order('vehicle_id', { ascending: true })
- 
+
   if (error) {
     console.error('getAvailableVehicles error:', error.message)
     throw error
   }
- 
+
   return data ?? []
 }
- 
+
 /**
  * ดึงข้อมูลรถคันเดียวจาก vehicle_id
  */
 export async function getVehicleById(vehicleId: number): Promise<Vehicle | null> {
+  if (!vehicleId || Number.isNaN(vehicleId)) {
+    console.warn('getVehicleById called with invalid id:', vehicleId)
+    return null
+  }
+
   const { data, error } = await supabase
     .from('vehicle')
     .select('*')
     .eq('vehicle_id', vehicleId)
     .single()
- 
+
   if (error) {
     console.error('getVehicleById error:', error.message)
     throw error
   }
- 
+
   return data
 }
