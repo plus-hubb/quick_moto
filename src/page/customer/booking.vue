@@ -95,8 +95,9 @@
             <input
               v-model="form.fullName"
               type="text"
-              placeholder="กรอกชื่อ-นามสกุล"
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
+              readonly
+              tabindex="-1"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm cursor-not-allowed text-slate-600"
             >
           </div>
           <div>
@@ -104,8 +105,9 @@
             <input
               v-model="form.phone"
               type="tel"
-              placeholder="08X-XXX-XXXX"
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
+              readonly
+              tabindex="-1"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm cursor-not-allowed text-slate-600"
             >
           </div>
           <div>
@@ -113,8 +115,9 @@
             <input
               v-model="form.email"
               type="email"
-              placeholder="example@email.com"
-              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
+              readonly
+              tabindex="-1"
+              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm cursor-not-allowed text-slate-600"
             >
           </div>
         </div>

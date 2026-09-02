@@ -35,12 +35,16 @@ export const signupCustomer = async (
     throw new Error('กรุณากรอกเบอร์โทรศัพท์')
   }
 
+  if (!/^\d{10}$/.test(phone)) {
+    throw new Error('เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก')
+  }
+
   if (!data.password) {
     throw new Error('กรุณากรอกรหัสผ่าน')
   }
 
-  if (data.password.length < 6) {
-    throw new Error('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร')
+  if (data.password.length < 8) {
+    throw new Error('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร')
   }
 
   // ==============================
@@ -328,6 +332,12 @@ export const updateCustomerProfile = async (
   if (!phone) {
     throw new Error(
       'กรุณากรอกเบอร์โทรศัพท์'
+    )
+  }
+
+  if (!/^\d{10}$/.test(phone)) {
+    throw new Error(
+      'เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก'
     )
   }
 

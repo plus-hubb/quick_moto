@@ -159,9 +159,11 @@
 
             <input
               v-else
-              v-model="editPhone"
+              :value="editPhone"
+              @input="handlePhoneInput"
               type="tel"
-              inputmode="tel"
+              inputmode="numeric"
+              maxlength="10"
               class="flex-1 text-sm text-slate-800 outline-none bg-transparent"
               placeholder="เบอร์โทรศัพท์"
             />
@@ -513,6 +515,13 @@ const isSaving = ref(false)
 const editName = ref('')
 const editPhone = ref('')
 
+const handlePhoneInput = (e: Event) => {
+  const target = e.target as HTMLInputElement
+  const digitsOnly = target.value.replace(/\D/g, '').slice(0, 10)
+  editPhone.value = digitsOnly
+  target.value = digitsOnly
+}
+
 
 // ==============================
 // Change Password
@@ -605,6 +614,16 @@ const editProfile = () => {
 const saveProfile = async () => {
 
   if (!customer.value) {
+    return
+  }
+
+  if (!editPhone.value.trim()) {
+    alert('กรุณากรอกเบอร์โทรศัพท์')
+    return
+  }
+
+  if (!/^\d{10}$/.test(editPhone.value.trim())) {
+    alert('เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก')
     return
   }
 
@@ -740,10 +759,10 @@ const savePassword = async () => {
   }
 
 
-  if (newPassword.value.length < 6) {
+  if (newPassword.value.length < 8) {
 
     alert(
-      'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร'
+      'รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร'
     )
 
     return

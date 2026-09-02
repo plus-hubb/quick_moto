@@ -356,6 +356,11 @@ const handleSubmit = async () => {
     return
   }
 
+  if (!/^\d{10}$/.test(form.phone.trim())) {
+    alert('เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก')
+    return
+  }
+
   // ตรวจสอบ Password
   if (form.password.length < 8) {
     alert('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร')
