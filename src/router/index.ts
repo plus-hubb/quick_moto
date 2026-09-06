@@ -11,6 +11,7 @@ import PaymentView from '../page/customer/payment.vue'
 import BookingsView from '../page/customer/bookings.vue'
 import BookingDetailView from '../page/customer/booking-detail.vue'
 import SearchView from '../page/customer/search.vue'
+import AdminVehiclesView from '../page/admin/vehicles-admin.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -64,6 +65,13 @@ const routes: Array<RouteRecordRaw> = [
   path: '/search',
   name: 'search',
   component: SearchView,
+},
+
+  // ----- หน้าแอดมิน -----
+  {
+  path: '/admin/vehicles',
+  name: 'admin-vehicles',
+  component: AdminVehiclesView,
 },
 ]
 
