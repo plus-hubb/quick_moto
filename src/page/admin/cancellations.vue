@@ -17,7 +17,7 @@
         </button>
 
         <div class="flex-1">
-          <p class="text-sm font-medium text-slate-900">รออนุมัติ</p>
+          <p class="text-sm font-medium text-slate-900">คำขอยกเลิก</p>
         </div>
 
         <div class="flex items-center gap-3 ml-auto shrink-0">
@@ -40,12 +40,12 @@
 
           <!-- Breadcrumb -->
           <p class="text-xs text-slate-400 mb-1">
-            <span class="text-slate-600 font-medium">รออนุมัติ</span>
+            <span class="text-slate-600 font-medium">คำขอยกเลิก</span>
           </p>
 
           <!-- Header -->
           <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
-            <h1 class="text-xl sm:text-2xl font-bold text-slate-900">รายการจองรออนุมัติ</h1>
+            <h1 class="text-xl sm:text-2xl font-bold text-slate-900">รายการที่ยกเลิก</h1>
             <span v-if="bookings.length > 0" class="text-xs text-slate-400">{{ bookings.length }} รายการ</span>
           </div>
 
@@ -56,7 +56,7 @@
 
           <!-- Empty -->
           <div v-else-if="bookings.length === 0" class="text-center text-slate-400 text-sm py-16 bg-white rounded-2xl border border-slate-100">
-            ไม่มีรายการจองรออนุมัติ
+            ไม่มีรายการที่ยกเลิก
           </div>
 
           <!-- Desktop Table -->
@@ -68,8 +68,8 @@
                   <th class="text-left font-medium px-5 py-3">ลูกค้า</th>
                   <th class="text-left font-medium px-5 py-3">รถ</th>
                   <th class="text-left font-medium px-5 py-3">วันรับ-คืน</th>
-                  <th class="text-left font-medium px-5 py-3">มัดจำ</th>
-                  <th class="text-right font-medium px-5 py-3">ดำเนินการ</th>
+                  <th class="text-left font-medium px-5 py-3">สลิป</th>
+                  <th class="text-right font-medium px-5 py-3">ดูรายละเอียด</th>
                 </tr>
               </thead>
               <tbody>
@@ -82,17 +82,20 @@
                   <td class="px-5 py-3 text-slate-600">{{ b.customer_name }}</td>
                   <td class="px-5 py-3 text-slate-600">{{ b.vehicle_brand }} {{ b.vehicle_model }}</td>
                   <td class="px-5 py-3 text-slate-600 text-xs">{{ b.pickup_date }} - {{ b.return_date }}</td>
-                  <td class="px-5 py-3 text-slate-900 font-medium">฿{{ formatPrice(b.deposit_price) }}</td>
+                  <td class="px-5 py-3">
+                    <span v-if="b.payment_slip" class="text-xs font-medium px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
+                      มีสลิป
+                    </span>
+                    <span v-else class="text-xs text-slate-400">-</span>
+                  </td>
                   <td class="px-5 py-3 text-right">
-                    <div class="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        @click="selectBooking(b)"
-                        class="bg-[#051329] hover:bg-[#0a1f3d] text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-all"
-                      >
-                        ดูรายละเอียด
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      @click="selectBooking(b)"
+                      class="bg-[#051329] hover:bg-[#0a1f3d] text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-all"
+                    >
+                      ดูรายละเอียด
+                    </button>
                   </td>
                 </tr>
               </tbody>
@@ -111,13 +114,15 @@
                   <p class="font-bold text-slate-900">{{ b.booking_code }}</p>
                   <p class="text-xs text-slate-400">{{ b.customer_name }}</p>
                 </div>
-                <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">
-                  รออนุมัติ
+                <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-600">
+                  ยกเลิก
                 </span>
               </div>
               <p class="text-sm text-slate-600 mb-1">{{ b.vehicle_brand }} {{ b.vehicle_model }}</p>
               <p class="text-xs text-slate-400 mb-1">{{ b.pickup_date }} - {{ b.return_date }}</p>
-              <p class="text-sm font-bold text-slate-900 mb-3">มัดจำ ฿{{ formatPrice(b.deposit_price) }}</p>
+              <p v-if="b.payment_slip" class="text-xs text-blue-600 mb-2">
+                <i class="fa-solid fa-image mr-1"></i>มีสลิปการชำระเงิน
+              </p>
               <button
                 type="button"
                 @click="selectBooking(b)"
@@ -135,7 +140,7 @@
 
           <!-- Breadcrumb -->
           <p class="text-xs text-slate-400 mb-1">
-            รออนุมัติ
+            คำขอยกเลิก
             <i class="fa-solid fa-chevron-right text-[8px] mx-1"></i>
             <span class="text-slate-600 font-medium">{{ selectedBooking.booking_code }}</span>
           </p>
@@ -156,8 +161,8 @@
           <div class="bg-white rounded-2xl border border-slate-100 p-5 mb-4">
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-sm font-bold text-slate-900">ข้อมูลการจอง</h2>
-              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-700">
-                รออนุมัติ
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-600">
+                ยกเลิก
               </span>
             </div>
 
@@ -194,7 +199,7 @@
           </div>
 
           <!-- ข้อมูลผู้จอง -->
-          <div class="bg-white rounded-2xl border border-slate-100 p-5 mb-6">
+          <div class="bg-white rounded-2xl border border-slate-100 p-5 mb-4">
             <h2 class="text-sm font-bold text-slate-900 mb-3">ข้อมูลผู้จอง</h2>
             <div class="grid grid-cols-2 gap-4 text-sm">
               <div>
@@ -209,48 +214,15 @@
           </div>
 
           <!-- สลิปการชำระเงิน -->
-          <div v-if="paymentSlip" class="bg-white rounded-2xl border border-slate-100 p-5 mb-4">
+          <div v-if="selectedBooking.payment_slip" class="bg-white rounded-2xl border border-slate-100 p-5">
             <h2 class="text-sm font-bold text-slate-900 mb-3">สลิปการชำระเงิน</h2>
             <div class="rounded-xl overflow-hidden border border-slate-200">
               <img
-                :src="paymentSlip"
+                :src="selectedBooking.payment_slip"
                 alt="สลิปการชำระเงิน"
                 class="w-full object-contain max-h-96"
               />
             </div>
-          </div>
-
-          <!-- ปุ่มดำเนินการ -->
-          <div class="flex gap-3">
-            <button
-              type="button"
-              @click="handleReject"
-              :disabled="isProcessing"
-              class="flex-1 bg-white border-2 border-red-200 text-red-600 font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-red-50 active:scale-[0.99] disabled:opacity-50"
-            >
-              <template v-if="isProcessing">
-                <i class="fa-solid fa-spinner fa-spin text-sm"></i>
-              </template>
-              <template v-else>
-                <i class="fa-solid fa-xmark text-sm"></i>
-              </template>
-              <span>ยกเลิก</span>
-            </button>
-
-            <button
-              type="button"
-              @click="handleApprove"
-              :disabled="isProcessing"
-              class="flex-1 bg-[#051329] hover:bg-[#0a1f3d] disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
-            >
-              <template v-if="isProcessing">
-                <i class="fa-solid fa-spinner fa-spin text-sm"></i>
-              </template>
-              <template v-else>
-                <i class="fa-solid fa-check text-sm"></i>
-              </template>
-              <span>อนุมัติ</span>
-            </button>
           </div>
 
         </template>
@@ -265,12 +237,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminSidebar from '../../components/adminsidebar.vue'
 import { getCurrentAdmin, logoutAdmin } from '../../services/customerService'
-import {
-  getPendingApprovals,
-  approveBooking,
-  rejectBooking,
-  getPaymentByBookingId
-} from '../../services/deliveryReturnService'
+import { getCancelledBookings } from '../../services/deliveryReturnService'
 import type { BookingWithDetails } from '../../services/deliveryReturnService'
 
 const router = useRouter()
@@ -278,11 +245,9 @@ const router = useRouter()
 const isSidebarOpen = ref(false)
 const admin = ref<{ admin_id: number; name: string; email: string } | null>(null)
 const isLoading = ref(false)
-const isProcessing = ref(false)
 
-const bookings = ref<BookingWithDetails[]>([])
-const selectedBooking = ref<BookingWithDetails | null>(null)
-const paymentSlip = ref<string | null>(null)
+const bookings = ref<(BookingWithDetails & { payment_slip: string | null })[]>([])
+const selectedBooking = ref<(BookingWithDetails & { payment_slip: string | null }) | null>(null)
 
 const adminInitial = computed(() => {
   return admin.value?.name?.charAt(0)?.toUpperCase() ?? 'A'
@@ -293,71 +258,16 @@ const formatPrice = (price: number) => Number(price).toLocaleString('en-US')
 const loadData = async () => {
   isLoading.value = true
   try {
-    bookings.value = await getPendingApprovals()
+    bookings.value = await getCancelledBookings()
   } catch (err) {
-    console.error('Load pending approvals error:', err)
+    console.error('Load cancellations error:', err)
   } finally {
     isLoading.value = false
   }
 }
 
-const selectBooking = async (b: BookingWithDetails) => {
+const selectBooking = (b: BookingWithDetails & { payment_slip: string | null }) => {
   selectedBooking.value = b
-  paymentSlip.value = null
-
-  // ดึงสลิปการชำระเงิน
-  const payment = await getPaymentByBookingId(b.booking_id)
-  if (payment) {
-    paymentSlip.value = payment.payment_slip
-  }
-}
-
-const handleApprove = async () => {
-  if (!selectedBooking.value || isProcessing.value) return
-
-  const confirmed = window.confirm(
-    `ยืนยันอนุมัติการจอง ${selectedBooking.value.booking_code}?`
-  )
-  if (!confirmed) return
-
-  isProcessing.value = true
-
-  try {
-    await approveBooking(selectedBooking.value.booking_id)
-    alert('อนุมัติสำเร็จ! รายการจะย้ายไป "รอส่งมอบ"')
-    selectedBooking.value = null
-    await loadData()
-  } catch (err) {
-    console.error('Approve error:', err)
-    const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
-    alert(`อนุมัติไม่สำเร็จ: ${message}`)
-  } finally {
-    isProcessing.value = false
-  }
-}
-
-const handleReject = async () => {
-  if (!selectedBooking.value || isProcessing.value) return
-
-  const confirmed = window.confirm(
-    `ยืนยันยกเลิกการจอง ${selectedBooking.value.booking_code}?`
-  )
-  if (!confirmed) return
-
-  isProcessing.value = true
-
-  try {
-    await rejectBooking(selectedBooking.value.booking_id)
-    alert('ยกเลิกการจองสำเร็จ')
-    selectedBooking.value = null
-    await loadData()
-  } catch (err) {
-    console.error('Reject error:', err)
-    const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
-    alert(`ยกเลิกไม่สำเร็จ: ${message}`)
-  } finally {
-    isProcessing.value = false
-  }
 }
 
 const handleLogout = async () => {

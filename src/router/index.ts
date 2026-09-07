@@ -15,6 +15,7 @@ import AdminDashboard from '../page/admin/dashboard.vue'
 import AdminVehiclesView from '../page/admin/vehicles-admin.vue'
 import DeliveryReturnView from '../page/admin/delivery-return.vue'
 import PendingApprovalView from '../page/admin/pending-approval.vue'
+import CancellationsView from '../page/admin/cancellations.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -95,6 +96,11 @@ const routes: Array<RouteRecordRaw> = [
   path: '/admin/return',
   name: 'admin-return',
   component: DeliveryReturnView,
+},
+  {
+  path: '/admin/cancellations',
+  name: 'admin-cancellations',
+  component: CancellationsView,
 },
 ]
 

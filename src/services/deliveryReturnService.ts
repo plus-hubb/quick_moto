@@ -347,3 +347,71 @@ export async function uploadImage(file: File): Promise<string> {
 
   return urlData.publicUrl
 }
+
+// ==============================
+// คำขอยกเลิก
+// ==============================
+
+/**
+ * ดึงรายการจองสถานะ "ยกเลิก"
+ */
+export async function getCancelledBookings(): Promise<(BookingWithDetails & { payment_slip: string | null })[]> {
+  const { data: bookings, error } = await supabase
+    .from('booking')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date')
+    .eq('status', 'ยกเลิก')
+    .order('booking_date', { ascending: false })
+
+  if (error) {
+    console.error('getCancelledBookings error:', error.message)
+    throw error
+  }
+
+  if (!bookings || bookings.length === 0) return []
+
+  const customerIds = [...new Set(bookings.map(b => b.customer_id))]
+  const vehicleIds = [...new Set(bookings.map(b => b.vehicle_id))]
+  const bookingIds = bookings.map(b => b.booking_id)
+
+  const [customersRes, vehiclesRes, paymentsRes] = await Promise.all([
+    supabase.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
+    supabase.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds),
+    supabase.from('payment').select('booking_id, payment_slip').in('booking_id', bookingIds)
+  ])
+
+  const customerMap = new Map((customersRes.data ?? []).map(c => [c.customer_id, c]))
+  const vehicleMap = new Map((vehiclesRes.data ?? []).map(v => [v.vehicle_id, v]))
+  const paymentMap = new Map((paymentsRes.data ?? []).map(p => [p.booking_id, p.payment_slip]))
+
+  return bookings.map(b => ({
+    ...b,
+    customer_name: customerMap.get(b.customer_id)?.name ?? '-',
+    customer_phone: customerMap.get(b.customer_id)?.phone ?? '-',
+    vehicle_brand: vehicleMap.get(b.vehicle_id)?.brand ?? '-',
+    vehicle_model: vehicleMap.get(b.vehicle_id)?.model ?? '-',
+    vehicle_image: vehicleMap.get(b.vehicle_id)?.image ?? null,
+    payment_slip: paymentMap.get(b.booking_id) ?? null
+  }))
+}
+
+// ==============================
+// ดึงสลิปการชำระเงิน
+// ==============================
+
+/**
+ * ดึงข้อมูลการชำระเงินของ booking
+ */
+export async function getPaymentByBookingId(bookingId: number): Promise<{ payment_slip: string | null } | null> {
+  const { data, error } = await supabase
+    .from('payment')
+    .select('payment_slip')
+    .eq('booking_id', bookingId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('getPaymentByBookingId error:', error.message)
+    return null
+  }
+
+  return data
+}
