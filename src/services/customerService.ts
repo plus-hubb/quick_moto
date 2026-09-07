@@ -238,6 +238,92 @@ export const loginCustomer = async (
 
 
 // ==============================
+// Login Admin
+// ==============================
+
+export interface Admin {
+  admin_id: number
+  name: string
+  email: string
+}
+
+export const loginAdmin = async (
+  email: string,
+  password: string
+): Promise<Admin> => {
+
+  const cleanEmail =
+    email.trim().toLowerCase()
+
+  if (!cleanEmail) {
+    throw new Error('กรุณากรอกอีเมล')
+  }
+
+  if (!password) {
+    throw new Error('กรุณากรอกรหัสผ่าน')
+  }
+
+  const {
+    data: adminData,
+    error: adminError
+  } = await supabase
+    .from('admin')
+    .select('admin_id, name, email')
+    .eq('email', cleanEmail)
+    .eq('password', password)
+    .maybeSingle()
+
+  if (adminError) {
+    console.error(
+      'ADMIN LOGIN ERROR:',
+      adminError
+    )
+
+    throw new Error(
+      `ตรวจสอบข้อมูลไม่สำเร็จ: ${adminError.message}`
+    )
+  }
+
+  if (!adminData) {
+    throw new Error('NOT_FOUND')
+  }
+
+  localStorage.setItem(
+    'admin',
+    JSON.stringify(adminData)
+  )
+
+  return adminData
+}
+
+
+// ==============================
+// Get Current Admin
+// ==============================
+
+export const getCurrentAdmin = async (): Promise<Admin | null> => {
+  const raw = localStorage.getItem('admin')
+  if (!raw) return null
+
+  try {
+    return JSON.parse(raw) as Admin
+  } catch {
+    localStorage.removeItem('admin')
+    return null
+  }
+}
+
+
+// ==============================
+// Logout Admin
+// ==============================
+
+export const logoutAdmin = async () => {
+  localStorage.removeItem('admin')
+}
+
+
+// ==============================
 // Get Current Customer
 // ==============================
 

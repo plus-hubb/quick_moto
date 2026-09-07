@@ -214,7 +214,7 @@ import { useRouter } from 'vue-router'
 import AdminSidebar from '../../components/adminsidebar.vue'
 import VehicleFormModal from '../../components/vehicleformmodal.vue'
 import { getAllVehiclesAdmin, deleteVehicle } from '../../services/adminvehicleservice'
-import { supabase } from '../../lib/supabase'
+import { logoutAdmin } from '../../services/customerService'
 import type { Vehicle } from '../../services/customerService'
 
 const router = useRouter()
@@ -292,8 +292,8 @@ const handleDelete = async (vehicle: Vehicle) => {
 }
 
 const handleLogout = async () => {
-  await supabase.auth.signOut()
-  router.push('/admin/login')
+  await logoutAdmin()
+  router.push('/signin')
 }
 
 onMounted(() => {

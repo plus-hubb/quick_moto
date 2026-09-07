@@ -63,7 +63,9 @@ const route = useRoute()
 const navItems = [
   { path: '/admin/dashboard', label: 'แดชบอร์ด', icon: 'fa-solid fa-grid-2' },
   { path: '/admin/vehicles', label: 'จัดการข้อมูลรถ', icon: 'fa-solid fa-motorcycle' },
-  { path: '/admin/bookings', label: 'จัดการการจอง', icon: 'fa-regular fa-bookmark' },
+  { path: '/admin/pending-approval', label: 'รออนุมัติ', icon: 'fa-regular fa-clock' },
+  { path: '/admin/delivery', label: 'รอส่งมอบ', icon: 'fa-solid fa-truck-ramp-box' },
+  { path: '/admin/return', label: 'รอรับคืน', icon: 'fa-solid fa-box-open' },
   { path: '/admin/cancellations', label: 'คำขอยกเลิก', icon: 'fa-regular fa-calendar-xmark' },
   { path: '/admin/rental-history', label: 'ประวัติการเช่า', icon: 'fa-solid fa-clock-rotate-left' },
   { path: '/admin/revenue', label: 'รายงานรายได้', icon: 'fa-solid fa-chart-line' }

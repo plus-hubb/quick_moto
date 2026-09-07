@@ -165,6 +165,7 @@ import { useRouter, RouterLink } from 'vue-router'
 
 import {
   loginCustomer,
+  loginAdmin,
   resetCustomerPassword
 } from '../services/customerService'
 
@@ -210,17 +211,43 @@ const handleSubmit = async () => {
 
   try {
 
-    // เรียก Service
+    // เช็ค Admin ก่อน
+    try {
+      const admin = await loginAdmin(
+        form.email,
+        form.password
+      )
+
+      console.log('Admin Login Success:', admin)
+
+      alert(`เข้าสู่ระบบสำเร็จ (Admin: ${admin.name})`)
+
+      await router.push('/admin/dashboard')
+
+      return
+
+    } catch (adminError) {
+
+      if (
+        adminError instanceof Error &&
+        adminError.message === 'NOT_FOUND'
+      ) {
+        // ไม่ใช่ admin — ลอง login เป็น customer
+      } else {
+        throw adminError
+      }
+    }
+
+    // Login เป็น Customer
     await loginCustomer(
       form.email,
       form.password
     )
 
-    console.log('Login Success')
+    console.log('Customer Login Success')
 
     alert('เข้าสู่ระบบสำเร็จ!')
 
-    // ไปหน้า Home
     await router.push('/home')
 
   } catch (error) {

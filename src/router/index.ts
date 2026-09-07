@@ -11,7 +11,10 @@ import PaymentView from '../page/customer/payment.vue'
 import BookingsView from '../page/customer/bookings.vue'
 import BookingDetailView from '../page/customer/booking-detail.vue'
 import SearchView from '../page/customer/search.vue'
+import AdminDashboard from '../page/admin/dashboard.vue'
 import AdminVehiclesView from '../page/admin/vehicles-admin.vue'
+import DeliveryReturnView from '../page/admin/delivery-return.vue'
+import PendingApprovalView from '../page/admin/pending-approval.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -69,15 +72,51 @@ const routes: Array<RouteRecordRaw> = [
 
   // ----- หน้าแอดมิน -----
   {
+  path: '/admin/dashboard',
+  name: 'admin-dashboard',
+  component: AdminDashboard,
+},
+  {
+  path: '/admin/pending-approval',
+  name: 'admin-pending-approval',
+  component: PendingApprovalView,
+},
+  {
   path: '/admin/vehicles',
   name: 'admin-vehicles',
   component: AdminVehiclesView,
+},
+  {
+  path: '/admin/delivery',
+  name: 'admin-delivery',
+  component: DeliveryReturnView,
+},
+  {
+  path: '/admin/return',
+  name: 'admin-return',
+  component: DeliveryReturnView,
 },
 ]
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
+})
+
+// ==============================
+// Route Guard — กัน customer เข้าหน้า admin
+// ==============================
+
+router.beforeEach((to) => {
+  const isAdminRoute = to.path.startsWith('/admin')
+
+  if (isAdminRoute) {
+    const admin = localStorage.getItem('admin')
+
+    if (!admin) {
+      return { name: 'signin' }
+    }
+  }
 })
 
 export default router
