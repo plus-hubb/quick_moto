@@ -85,13 +85,24 @@
                   <td class="px-5 py-3 text-slate-600">{{ b.vehicle_brand }} {{ b.vehicle_model }}</td>
                   <td class="px-5 py-3 text-slate-600 text-xs">{{ b.pickup_date }} - {{ b.return_date }}</td>
                   <td class="px-5 py-3 text-right">
-                    <button
-                      type="button"
-                      @click="selectBooking(b)"
-                      class="bg-[#051329] hover:bg-[#0a1f3d] text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-all"
-                    >
-                      {{ isDeliveryMode ? 'ส่งมอบ' : 'รับคืน' }}
-                    </button>
+                    <div class="flex items-center justify-end gap-2">
+                      <button
+                        v-if="isDeliveryMode && isPastPickupDate(b.return_date)"
+                        type="button"
+                        @click="handleCancelNoShow(b)"
+                        :disabled="isCancelling"
+                        class="bg-white border border-red-300 text-red-600 text-xs font-medium px-3 py-1.5 rounded-lg transition-all hover:bg-red-50 disabled:opacity-50"
+                      >
+                        ยกเลิก
+                      </button>
+                      <button
+                        type="button"
+                        @click="selectBooking(b)"
+                        class="bg-[#051329] hover:bg-[#0a1f3d] text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-all"
+                      >
+                        {{ isDeliveryMode ? 'ส่งมอบ' : 'รับคืน' }}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -113,13 +124,24 @@
               </div>
               <p class="text-sm text-slate-600 mb-1">{{ b.vehicle_brand }} {{ b.vehicle_model }}</p>
               <p class="text-xs text-slate-400 mb-3">{{ b.pickup_date }} - {{ b.return_date }}</p>
-              <button
-                type="button"
-                @click="selectBooking(b)"
-                class="w-full bg-[#051329] hover:bg-[#0a1f3d] text-white text-xs font-medium py-2.5 rounded-xl transition-all"
-              >
-                {{ isDeliveryMode ? 'ส่งมอบ' : 'รับคืน' }}
-              </button>
+              <div class="flex gap-2">
+                <button
+                  v-if="isDeliveryMode && isPastPickupDate(b.return_date)"
+                  type="button"
+                  @click="handleCancelNoShow(b)"
+                  :disabled="isCancelling"
+                  class="flex-shrink-0 bg-white border border-red-300 text-red-600 text-xs font-medium px-3 py-2.5 rounded-xl transition-all hover:bg-red-50 disabled:opacity-50"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="button"
+                  @click="selectBooking(b)"
+                  class="flex-1 bg-[#051329] hover:bg-[#0a1f3d] text-white text-xs font-medium py-2.5 rounded-xl transition-all"
+                >
+                  {{ isDeliveryMode ? 'ส่งมอบ' : 'รับคืน' }}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -374,7 +396,8 @@ import {
   saveDelivery,
   saveReturn,
   savePenalty,
-  uploadImage
+  uploadImage,
+  cancelNoShowBooking
 } from '../../services/deliveryReturnService'
 import type { BookingWithDetails } from '../../services/deliveryReturnService'
 
@@ -404,6 +427,37 @@ const missingItemFee = ref<number>(0)
 const totalPenalty = computed(() => damageFee.value + lateFee.value + missingItemFee.value)
 
 const isDeliveryMode = computed(() => route.path === '/admin/delivery')
+
+const isPastPickupDate = (pickupDate: string): boolean => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const pickup = new Date(pickupDate)
+  pickup.setHours(0, 0, 0, 0)
+  return pickup < today
+}
+
+const isCancelling = ref(false)
+
+const handleCancelNoShow = async (booking: BookingWithDetails) => {
+  if (isCancelling.value) return
+  const confirmed = window.confirm(
+    `ยืนยันยกเลิกการจอง ${booking.booking_code}?\n\nเหตุผล: ลูกค้าไม่มารับรถภายในวันที่เช่า\nไม่มีการคืนเงิน`
+  )
+  if (!confirmed) return
+
+  isCancelling.value = true
+  try {
+    await cancelNoShowBooking(booking.booking_id)
+    alert('ยกเลิกการจองสำเร็จ')
+    await loadData()
+  } catch (err) {
+    console.error('Cancel no-show error:', err)
+    const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาด'
+    alert(`ยกเลิกไม่สำเร็จ: ${message}`)
+  } finally {
+    isCancelling.value = false
+  }
+}
 
 const adminInitial = computed(() => {
   return admin.value?.name?.charAt(0)?.toUpperCase() ?? 'A'

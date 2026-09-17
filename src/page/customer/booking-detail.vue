@@ -35,6 +35,34 @@
         <p class="text-xs text-slate-400 mt-1">รหัสการจองของคุณ: {{ booking.booking_code }}</p>
       </div>
 
+      <!-- Refund Notice (แสดงเฉพาะเมื่อยกเลิกด้วยเหตุผลที่ต้องขอเงินคืน) -->
+      <div
+        v-if="showRefundNotice"
+        class="rounded-2xl p-4 mb-6 flex items-start gap-3"
+        :class="refundNoticeStyle.class"
+      >
+        <i class="fa-solid text-lg mt-0.5" :class="refundNoticeStyle.iconClass"></i>
+        <div class="flex-1">
+          <p class="text-sm font-bold" :class="refundNoticeStyle.textClass">{{ refundNoticeStyle.title }}</p>
+          <p
+            v-if="refundNoticeStyle.message"
+            class="text-xs mt-1 opacity-80"
+            :class="refundNoticeStyle.textClass"
+          >
+            {{ refundNoticeStyle.message }}
+          </p>
+          <router-link
+            v-if="showContactLink"
+            to="/contact"
+            class="inline-flex items-center gap-1.5 mt-2 text-xs font-medium underline"
+            :class="refundNoticeStyle.textClass"
+          >
+            <i class="fa-solid fa-phone"></i>
+            ติดต่อเรา
+          </router-link>
+        </div>
+      </div>
+
       <!-- Vehicle Card -->
       <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-6">
         <div class="w-full h-40 sm:h-48 bg-slate-200 rounded-xl overflow-hidden mb-4">
@@ -101,15 +129,12 @@
         <button
           type="button"
           @click="handleDownloadCertificate"
-          :disabled="normalizeStatus(booking.status) !== 'อนุมัติแล้ว'"
+          :disabled="!canDownload"
           class="w-full bg-[#051329] hover:bg-[#0a1f3d] disabled:opacity-40 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
         >
           <i class="fa-solid fa-download"></i>
           <span>ดาวน์โหลดใบรับรองการจอง</span>
         </button>
-        <p v-if="normalizeStatus(booking.status) !== 'อนุมัติแล้ว'" class="text-xs text-slate-400 text-center -mt-1.5">
-          ดาวน์โหลดใบรับรองได้เมื่อสถานะเป็น "ยืนยันแล้ว" เท่านั้น
-        </p>
 
         <button
           v-if="canCancel"
@@ -168,6 +193,56 @@ const canCancel = computed(() =>
   booking.value ? ['รออนุมัติ', 'อนุมัติแล้ว'].includes(normalizeStatus(booking.value.status)) : false
 )
 
+const canDownload = computed(() => {
+  if (!booking.value) return false
+  const status = normalizeStatus(booking.value.status)
+  return ['อนุมัติแล้ว', 'กำลังเช่า', 'เสร็จสิ้น', 'ยกเลิก'].includes(status)
+})
+
+const showRefundNotice = computed(() => {
+  if (!booking.value) return false
+  const status = normalizeStatus(booking.value.status)
+  if (status !== 'ยกเลิก') return false
+  const reason = booking.value.cancel_reason
+  // no_show = ไม่คืนเงิน ส่วน admin_reject/auto_expire = ขอคืนเงินได้
+  if (reason === 'no_show') return true
+  return reason === 'admin_reject' || reason === 'auto_expire' || reason === null || reason === ''
+})
+
+const refundNoticeStyle = computed(() => {
+  const reason = booking.value?.cancel_reason
+  if (reason === 'no_show') {
+    return {
+      class: 'bg-red-50 border border-red-200',
+      iconClass: 'fa-user-xmark text-red-500',
+      textClass: 'text-red-800',
+      title: 'ไม่มารับรถภายในวันที่เช่า',
+      message: 'ลูกค้าไม่ได้มารับรถตามวันที่ระบุในการจอง การจองจึงถูกยกเลิกโดยอัตโนมัติ ไม่มีการคืนเงิน'
+    }
+  }
+  if (reason === 'auto_expire') {
+    return {
+      class: 'bg-amber-50 border border-amber-200',
+      iconClass: 'fa-clock text-amber-500',
+      textClass: 'text-amber-800',
+      title: 'การจองหมดอายุ',
+      message: 'การจองของคุณถูกยกเลิกอัตโนมัติเนื่องจากไม่ได้รับการอนุมัติภายในเวลาที่กำหนด กรุณาติดต่อร้านเพื่อขอเงินมัดจำคืน'
+    }
+  }
+  return {
+    class: 'bg-red-50 border border-red-200',
+    iconClass: 'fa-circle-exclamation text-red-500',
+    textClass: 'text-red-800',
+    title: 'การจองถูกยกเลิก',
+    message: 'การจองนี้ถูกยกเลิกโดยผู้ดูแลระบบ กรุณาติดต่อร้านเพื่อขอเงินมัดจำคืน'
+  }
+})
+
+const showContactLink = computed(() => {
+  const reason = booking.value?.cancel_reason
+  return reason !== 'no_show'
+})
+
 const formatPrice = (price: number) => Number(price).toLocaleString('en-US')
 
 const formatDateTh = (dateStr: string) =>
@@ -178,6 +253,8 @@ const statusDisplay = computed(() => {
   switch (status) {
     case 'อนุมัติแล้ว':
       return { heading: 'การจองเสร็จสมบูรณ์!', icon: 'fa-check', iconBg: 'bg-emerald-500' }
+    case 'กำลังเช่า':
+      return { heading: 'กำลังเช่ารถ', icon: 'fa-motorcycle', iconBg: 'bg-blue-500' }
     case 'รออนุมัติ':
       return { heading: 'กำลังรอการอนุมัติ', icon: 'fa-clock', iconBg: 'bg-amber-500' }
     case 'เสร็จสิ้น':
@@ -231,34 +308,249 @@ const handleCancelBooking = async () => {
   }
 }
 
-// สร้างใบรับรองการจองเป็น PDF แล้วดาวน์โหลด (ต้องติดตั้ง jspdf ก่อน: npm install jspdf)
+// สร้างใบรับรองการจองเป็น PDF แล้วดาวน์โหลด
 const handleDownloadCertificate = async () => {
-  if (!booking.value || normalizeStatus(booking.value.status) !== 'อนุมัติแล้ว') return
+  if (!booking.value || !canDownload.value) return
 
   const { jsPDF } = await import('jspdf')
-  const doc = new jsPDF()
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const pageW = doc.internal.pageSize.getWidth()
+  const pageH = doc.internal.pageSize.getHeight()
 
-  doc.setFontSize(18)
-  doc.text('Booking Certificate / ใบรับรองการจอง', 20, 20)
+  const navy: [number, number, number] = [15, 23, 42]
+  const white: [number, number, number] = [255, 255, 255]
+  const gray50: [number, number, number] = [248, 250, 252]
+  const gray100: [number, number, number] = [241, 245, 249]
+  const gray300: [number, number, number] = [203, 213, 225]
+  const gray500: [number, number, number] = [100, 116, 139]
+  const gray900: [number, number, number] = [15, 23, 42]
 
-  doc.setFontSize(11)
-  const lines = [
-    `Booking Code: ${booking.value.booking_code}`,
-    `Vehicle: ${booking.value.vehicle?.brand} ${booking.value.vehicle?.model}`,
-    `Pickup Date: ${booking.value.pickup_date}`,
-    `Return Date: ${booking.value.return_date}`,
-    `Rental Days: ${rentalDays.value}`,
-    `Deposit Paid: ${booking.value.deposit_price} THB`,
-    `Total Rental Price: ${booking.value.rental_price} THB`,
-    `Status: ${booking.value.status}`
-  ]
+  // ===== BACKGROUND =====
+  doc.setFillColor(...gray50)
+  doc.rect(0, 0, pageW, pageH, 'F')
 
-  lines.forEach((line, i) => {
-    doc.text(line, 20, 40 + i * 8)
-  })
+  // ===== HEADER BAR =====
+  doc.setFillColor(...navy)
+  doc.rect(0, 0, pageW, 50, 'F')
+
+  // แถบไฮไลท์บางๆ ด้านล่าง header
+  doc.setFillColor(59, 130, 246)
+  doc.rect(0, 50, pageW, 1.5, 'F')
+
+  // ชื่อร้าน
+  doc.setTextColor(...white)
+  doc.setFontSize(24)
+  doc.setFont('helvetica', 'bold')
+  doc.text('QUICK MOTO', 25, 22)
+
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(148, 163, 184)
+  doc.text('MOTORCYCLE RENTAL SERVICE', 25, 30)
+
+  // หัวข้อใบรับรอง
+  doc.setTextColor(...white)
+  doc.setFontSize(16)
+  doc.setFont('helvetica', 'bold')
+  doc.text('BOOKING CERTIFICATE', 25, 45)
+
+  // ===== STATUS BADGE =====
+  const status = normalizeStatus(booking.value.status)
+  let statusLabel: string
+  let badgeColor: [number, number, number]
+
+  if (status === 'อนุมัติแล้ว') {
+    statusLabel = 'APPROVED'
+    badgeColor = [34, 197, 94]
+  } else if (status === 'กำลังเช่า') {
+    statusLabel = 'RENTING'
+    badgeColor = [59, 130, 246]
+  } else if (status === 'เสร็จสิ้น') {
+    statusLabel = 'COMPLETED'
+    badgeColor = [100, 116, 139]
+  } else if (status === 'ยกเลิก') {
+    statusLabel = 'CANCELLED'
+    badgeColor = [239, 68, 68]
+  } else {
+    statusLabel = status.toUpperCase()
+    badgeColor = [100, 116, 139]
+  }
+
+  const badgePad = 4
+  const badgeW = doc.getStringUnitWidth(statusLabel) * 10 / doc.internal.scaleFactor + badgePad * 2
+  const badgeX = pageW - badgeW - 25
+  doc.setFillColor(...badgeColor)
+  doc.roundedRect(badgeX, 38, badgeW, 9, 2, 2, 'F')
+  doc.setTextColor(...white)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'bold')
+  doc.text(statusLabel, badgeX + badgeW / 2, 44.5, { align: 'center' })
+
+  // ===== BOOKING CODE =====
+  let y = 62
+  doc.setFillColor(...white)
+  doc.roundedRect(25, y, pageW - 50, 16, 2, 2, 'F')
+  doc.setDrawColor(...gray300)
+  doc.setLineWidth(0.3)
+  doc.roundedRect(25, y, pageW - 50, 16, 2, 2, 'S')
+
+  doc.setTextColor(...gray500)
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.text('BOOKING CODE', 30, y + 5.5)
+  doc.setTextColor(...gray900)
+  doc.setFontSize(12)
+  doc.setFont('helvetica', 'bold')
+  doc.text(booking.value.booking_code, 30, y + 12)
+
+  // ===== DETAILS SECTION =====
+  y += 24
+
+  // เส้นคั่น
+  doc.setDrawColor(...gray300)
+  doc.setLineWidth(0.2)
+  doc.line(25, y, pageW - 25, y)
+
+  const fieldGap = 18
+  const drawRow = (label1: string, val1: string, label2: string, val2: string, yPos: number) => {
+    doc.setTextColor(...gray500)
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'normal')
+    doc.text(label1, 30, yPos)
+    doc.setTextColor(...gray900)
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.text(val1, 30, yPos + 5)
+    doc.setTextColor(...gray500)
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'normal')
+    doc.text(label2, pageW / 2 + 5, yPos)
+    doc.setTextColor(...gray900)
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.text(val2, pageW / 2 + 5, yPos + 5)
+  }
+
+  y += 6
+  drawRow(
+    'RENTER NAME', booking.value.customer?.name || '-',
+    'PHONE', booking.value.customer?.phone || '-',
+    y
+  )
+
+  y += fieldGap
+  doc.line(25, y, pageW - 25, y)
+
+  y += 5
+  drawRow(
+    'VEHICLE', `${booking.value.vehicle?.brand} ${booking.value.vehicle?.model}`,
+    'ENGINE SIZE', `${booking.value.vehicle?.engine_size ?? '-'} cc`,
+    y
+  )
+
+  y += fieldGap
+  doc.line(25, y, pageW - 25, y)
+
+  y += 5
+  drawRow(
+    'PICKUP DATE', formatDateEn(booking.value.pickup_date),
+    'RETURN DATE', formatDateEn(booking.value.return_date),
+    y
+  )
+
+  y += fieldGap
+  doc.line(25, y, pageW - 25, y)
+
+  y += 5
+  drawRow(
+    'RENTAL DAYS', `${rentalDays.value} day${rentalDays.value > 1 ? 's' : ''}`,
+    'VEHICLE TYPE', booking.value.vehicle?.vehicle_type || '-',
+    y
+  )
+
+  y += fieldGap
+  doc.line(25, y, pageW - 25, y)
+
+  // ===== PRICING =====
+  y += 8
+  doc.setFillColor(...white)
+  doc.roundedRect(25, y, pageW - 50, 34, 2, 2, 'F')
+  doc.setDrawColor(...gray300)
+  doc.roundedRect(25, y, pageW - 50, 34, 2, 2, 'S')
+
+  const drawPriceRow = (label: string, value: string, yPos: number, bold: boolean) => {
+    doc.setTextColor(...gray500)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'normal')
+    doc.text(label, 32, yPos)
+    doc.setTextColor(...gray900)
+    doc.setFontSize(bold ? 11 : 10)
+    doc.setFont('helvetica', bold ? 'bold' : 'normal')
+    doc.text(value, pageW - 32, yPos, { align: 'right' })
+  }
+
+  drawPriceRow('DEPOSIT', `${booking.value.deposit_price.toLocaleString()} THB`, y + 8, false)
+  drawPriceRow('RENTAL FEE', `${booking.value.rental_price.toLocaleString()} THB`, y + 15, false)
+
+  // เส้นคั่นราคา
+  doc.setDrawColor(...gray300)
+  doc.setLineWidth(0.4)
+  doc.line(32, y + 20, pageW - 32, y + 20)
+
+  drawPriceRow('TOTAL', `${booking.value.rental_price.toLocaleString()} THB`, y + 27, true)
+
+  // ===== CANCEL NOTE (เฉพาะยกเลิก) =====
+  if (status === 'ยกเลิก') {
+    y += 42
+    doc.setFillColor(254, 226, 226)
+    doc.roundedRect(25, y, pageW - 50, 16, 2, 2, 'F')
+    doc.setDrawColor(252, 165, 165)
+    doc.roundedRect(25, y, pageW - 50, 16, 2, 2, 'S')
+
+    doc.setTextColor(153, 27, 27)
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'bold')
+    doc.text('NOTE', 32, y + 5.5)
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    let noteLine1 = ''
+    let noteLine2 = ''
+    const reason = booking.value.cancel_reason
+
+    if (reason === 'no_show') {
+      noteLine1 = 'Customer did not pick up the vehicle within the rental date.'
+      noteLine2 = 'No refund will be provided.'
+    } else if (reason === 'admin_reject') {
+      noteLine1 = 'This booking was cancelled by the administrator.'
+      noteLine2 = 'Please contact the shop for a refund.'
+    } else if (reason === 'auto_expire') {
+      noteLine1 = 'This booking has expired due to no approval within the time limit.'
+      noteLine2 = 'Please contact the shop for a refund.'
+    } else {
+      noteLine1 = 'This booking has been cancelled.'
+      noteLine2 = 'Please contact the shop for more information.'
+    }
+    doc.text(noteLine1, 32, y + 10.5)
+    doc.text(noteLine2, 32, y + 14)
+  }
+
+  // ===== FOOTER =====
+  doc.setDrawColor(...gray300)
+  doc.setLineWidth(0.2)
+  doc.line(25, pageH - 18, pageW - 25, pageH - 18)
+
+  doc.setTextColor(...gray500)
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Quick Moto - Motorcycle Rental Service', 25, pageH - 13)
+  doc.text(`Generated: ${new Date().toLocaleDateString('en-GB')}`, pageW - 25, pageH - 13, { align: 'right' })
 
   doc.save(`booking-${booking.value.booking_code}.pdf`)
 }
+
+const formatDateEn = (dateStr: string) =>
+  new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
 
 onMounted(() => {
   loadBooking()

@@ -33,6 +33,7 @@ export interface BookingWithDetails {
   rental_price: number
   status: string
   booking_date: string
+  cancel_reason: string | null
   customer_name: string
   customer_phone: string
   vehicle_brand: string
@@ -50,9 +51,9 @@ export interface BookingWithDetails {
 export async function getPendingApprovals(): Promise<BookingWithDetails[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason')
     .eq('status', 'รออนุมัติ')
-    .order('booking_date', { ascending: true })
+    .order('booking_date', { ascending: false })
 
   if (error) {
     console.error('getPendingApprovals error:', error.message)
@@ -104,7 +105,7 @@ export async function approveBooking(bookingId: number): Promise<void> {
 export async function rejectBooking(bookingId: number): Promise<void> {
   const { error } = await supabase
     .from('booking')
-    .update({ status: 'ยกเลิก' })
+    .update({ status: 'ยกเลิก', cancel_reason: 'admin_reject' })
     .eq('booking_id', bookingId)
     .eq('status', 'รออนุมัติ')
 
@@ -115,14 +116,31 @@ export async function rejectBooking(bookingId: number): Promise<void> {
 }
 
 /**
+ * ยกเลิกการจองที่ "อนุมัติแล้ว" แต่ลูกค้าไม่มารับรถ (เลยวันรับรถแล้ว)
+ * เปลี่ยนสถานะเป็น "ยกเลิก" พร้อม cancel_reason = 'no_show'
+ */
+export async function cancelNoShowBooking(bookingId: number): Promise<void> {
+  const { error } = await supabase
+    .from('booking')
+    .update({ status: 'ยกเลิก', cancel_reason: 'no_show' })
+    .eq('booking_id', bookingId)
+    .eq('status', 'อนุมัติแล้ว')
+
+  if (error) {
+    console.error('cancelNoShowBooking error:', error.message)
+    throw error
+  }
+}
+
+/**
  * ดึงรายการจองสถานะ "อนุมัติแล้ว" ที่ยังไม่มี delivery record (รอส่งมอบ)
  */
 export async function getPendingDeliveries(): Promise<BookingWithDetails[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason')
     .eq('status', 'อนุมัติแล้ว')
-    .order('pickup_date', { ascending: true })
+    .order('pickup_date', { ascending: false })
 
   if (error) {
     console.error('getPendingDeliveries error:', error.message)
@@ -185,7 +203,7 @@ export async function getPendingReturns(): Promise<(BookingWithDetails & { deliv
 
   const { data: bookings, error: bookingError } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason')
     .in('booking_id', bookingIds)
     .eq('status', 'กำลังเช่า')
 
@@ -358,7 +376,7 @@ export async function uploadImage(file: File): Promise<string> {
 export async function getCancelledBookings(): Promise<(BookingWithDetails & { payment_slip: string | null })[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason')
     .eq('status', 'ยกเลิก')
     .order('booking_date', { ascending: false })
 
@@ -437,7 +455,7 @@ export interface CompletedBooking extends BookingWithDetails {
 export async function getCompletedBookings(): Promise<CompletedBooking[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason')
     .eq('status', 'เสร็จสิ้น')
     .order('return_date', { ascending: false })
 

@@ -20,6 +20,7 @@ export interface Booking {
   deposit_price: number
   rental_price: number
   status: string
+  cancel_reason: string | null
 }
 
 export interface Payment {
@@ -301,7 +302,7 @@ export async function getCustomerById(customerId: number): Promise<Customer | nu
 export async function cancelConfirmedBooking(bookingId: number): Promise<void> {
   const { error } = await supabase
     .from('booking')
-    .update({ status: 'ยกเลิก' })
+    .update({ status: 'ยกเลิก', cancel_reason: 'customer_cancel' })
     .eq('booking_id', bookingId)
 
   if (error) {
@@ -330,6 +331,7 @@ export async function getBookingById(bookingId: number): Promise<Booking | null>
 
 export interface BookingWithVehicle extends Booking {
   vehicle: Vehicle
+  customer?: Customer
 }
 
 /**
@@ -365,7 +367,7 @@ export async function getCustomerBookings(customerId: number): Promise<BookingWi
 export async function getBookingDetail(bookingId: number): Promise<BookingWithVehicle | null> {
   const { data, error } = await supabase
     .from('booking')
-    .select('*, vehicle:vehicle_id(*)')
+    .select('*, vehicle:vehicle_id(*), customer:customer_id(name, phone, email)')
     .eq('booking_id', bookingId)
     .single()
 
@@ -383,7 +385,7 @@ export async function getBookingDetail(bookingId: number): Promise<BookingWithVe
 export async function cancelBookingRecord(bookingId: number): Promise<void> {
   const { error, data } = await supabase
     .from('booking')
-    .update({ status: 'ยกเลิก' })
+    .update({ status: 'ยกเลิก', cancel_reason: 'customer_cancel' })
     .eq('booking_id', bookingId)
     .select('booking_id')
 

@@ -87,6 +87,20 @@
               <p class="text-xs text-slate-500 mt-0.5">
                 {{ booking.vehicle?.engine_size ?? '-' }} cc {{ booking.vehicle?.vehicle_type || '' }}
               </p>
+              <p
+                v-if="normalizeStatus(booking.status) === 'ยกเลิก' && (booking.cancel_reason === 'admin_reject' || booking.cancel_reason === 'auto_expire' || !booking.cancel_reason)"
+                class="text-xs text-red-500 mt-1"
+              >
+                <i class="fa-solid fa-circle-info mr-1"></i>
+                กรุณาติดต่อร้านเพื่อขอเงินคืน
+              </p>
+              <p
+                v-if="normalizeStatus(booking.status) === 'ยกเลิก' && booking.cancel_reason === 'no_show'"
+                class="text-xs text-red-500 mt-1"
+              >
+                <i class="fa-solid fa-circle-info mr-1"></i>
+                ไม่มารับรถภายในวันที่เช่า ไม่มีการคืนเงิน
+              </p>
               <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
                 <i class="fa-regular fa-calendar"></i>
                 {{ formatDateTh(booking.pickup_date) }} - {{ formatDateTh(booking.return_date) }}
@@ -130,7 +144,7 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 
 // สถานะที่ถือว่ายัง "ใช้งานอยู่" vs "เสร็จสิ้นแล้ว" (รวมยกเลิกไว้ในประวัติด้วย)
-const ACTIVE_STATUSES = ['รออนุมัติ', 'อนุมัติแล้ว']
+const ACTIVE_STATUSES = ['รออนุมัติ', 'อนุมัติแล้ว', 'กำลังเช่า']
 const HISTORY_STATUSES = ['เสร็จสิ้น', 'ยกเลิก']
 
 const filteredBookings = computed(() => {
@@ -145,6 +159,8 @@ const statusBadge = (rawStatus: string) => {
       return { label: 'กำลังดำเนินการ', class: 'bg-amber-100 text-amber-700' }
     case 'อนุมัติแล้ว':
       return { label: 'ยืนยันแล้ว', class: 'bg-emerald-100 text-emerald-700' }
+    case 'กำลังเช่า':
+      return { label: 'กำลังเช่า', class: 'bg-blue-100 text-blue-700' }
     case 'เสร็จสิ้น':
       return { label: 'เสร็จสิ้น', class: 'bg-slate-200 text-slate-600' }
     case 'ยกเลิก':
