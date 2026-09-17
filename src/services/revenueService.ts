@@ -13,6 +13,9 @@ export interface RevenueRecord {
   cancel_reason: string | null
   penalty_total: number
   month: string // YYYY-MM
+  rev_deposit: number
+  rev_rental: number
+  rev_penalty: number
 }
 
 export interface MonthlyRevenue {
@@ -95,12 +98,13 @@ export async function getRevenueData(): Promise<RevenueSummary> {
 
   // คำนวณรายได้แต่ละ booking
   const records: RevenueRecord[] = (bookings ?? []).map(b => {
+    const penalty = penaltyMap.get(b.booking_id) ?? 0
     const rev = calcBookingRevenue({
       status: b.status,
       cancel_reason: b.cancel_reason,
       deposit_price: b.deposit_price,
       rental_price: b.rental_price,
-      penalty_total: penaltyMap.get(b.booking_id) ?? 0
+      penalty_total: penalty
     })
 
     const bookingDate = new Date(b.booking_date)
@@ -116,8 +120,11 @@ export async function getRevenueData(): Promise<RevenueSummary> {
       rental_price: b.rental_price,
       status: b.status,
       cancel_reason: b.cancel_reason,
-      penalty_total: penaltyMap.get(b.booking_id) ?? 0,
-      month
+      penalty_total: penalty,
+      month,
+      rev_deposit: rev.deposit,
+      rev_rental: rev.rental,
+      rev_penalty: rev.penalty
     }
   })
 
@@ -129,22 +136,14 @@ export async function getRevenueData(): Promise<RevenueSummary> {
   let totalPenalty = 0
 
   for (const r of records) {
-    const rev = calcBookingRevenue({
-      status: r.status,
-      cancel_reason: r.cancel_reason,
-      deposit_price: r.deposit_price,
-      rental_price: r.rental_price,
-      penalty_total: r.penalty_total
-    })
-
-    totalDeposit += rev.deposit
-    totalRental += rev.rental
-    totalPenalty += rev.penalty
+    totalDeposit += r.rev_deposit
+    totalRental += r.rev_rental
+    totalPenalty += r.rev_penalty
 
     const existing = monthMap.get(r.month) ?? { deposit: 0, rental: 0, penalty: 0, count: 0 }
-    existing.deposit += rev.deposit
-    existing.rental += rev.rental
-    existing.penalty += rev.penalty
+    existing.deposit += r.rev_deposit
+    existing.rental += r.rev_rental
+    existing.penalty += r.rev_penalty
     existing.count += 1
     monthMap.set(r.month, existing)
   }

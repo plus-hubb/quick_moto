@@ -320,7 +320,6 @@ const handleDownloadCertificate = async () => {
   const navy: [number, number, number] = [15, 23, 42]
   const white: [number, number, number] = [255, 255, 255]
   const gray50: [number, number, number] = [248, 250, 252]
-  const gray100: [number, number, number] = [241, 245, 249]
   const gray300: [number, number, number] = [203, 213, 225]
   const gray500: [number, number, number] = [100, 116, 139]
   const gray900: [number, number, number] = [15, 23, 42]
