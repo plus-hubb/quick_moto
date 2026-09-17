@@ -86,7 +86,7 @@ function generateBookingCode(): string {
 /**
  * เช็คว่าช่วงวันที่ A ทับกับช่วงวันที่ B หรือไม่
  */
-function isRangeOverlapping(
+export function isRangeOverlapping(
   pickupA: string,
   returnA: string,
   pickupB: string,
