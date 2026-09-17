@@ -2,7 +2,7 @@
   <div class="bg-slate-100 min-h-screen font-kanit pb-24">
 
     <!-- Top Bar -->
-    <div class="bg-[#051329] px-4 py-3 flex items-center gap-3">
+    <div class="bg-[#051329] px-4 py-3 md:py-4 md:px-6 flex items-center gap-3">
       <button type="button" @click="goBack" class="text-white">
         <i class="fa-solid fa-arrow-left text-base"></i>
       </button>
@@ -17,7 +17,7 @@
     </div>
 
     <!-- Customer -->
-    <div v-else-if="customer" class="w-full max-w-lg mx-auto px-4 pt-6">
+    <div v-else-if="customer" class="w-full max-w-2xl mx-auto px-4 pt-6">
 
       <!-- Profile Image -->
       <div class="flex flex-col items-center pt-2 mb-6">
@@ -249,7 +249,7 @@
     </div>
 
     <!-- No Customer -->
-    <div v-else class="w-full max-w-lg mx-auto px-4 pt-10">
+    <div v-else class="w-full max-w-2xl mx-auto px-4 pt-10">
       <div class="bg-white rounded-2xl p-6 text-center shadow-sm border border-slate-100">
         <i class="fa-solid fa-circle-exclamation text-red-400 text-2xl mb-3"></i>
         <p class="text-red-500 font-medium">ไม่พบข้อมูลลูกค้า</p>

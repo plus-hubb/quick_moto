@@ -221,8 +221,15 @@
                 :src="selectedBooking.payment_slip"
                 alt="สลิปการชำระเงิน"
                 class="w-full object-contain max-h-96"
+                @error="slipImageError = true"
               />
             </div>
+            <p v-if="slipImageError" class="text-xs text-red-500 mt-2">ไม่สามารถโหลดรูปสลิปได้</p>
+          </div>
+
+          <div v-if="selectedBooking && !selectedBooking.payment_slip" class="bg-white rounded-2xl border border-slate-100 p-5">
+            <h2 class="text-sm font-bold text-slate-900 mb-3">สลิปการชำระเงิน</h2>
+            <p class="text-sm text-slate-400">ไม่มีสลิปการชำระเงิน</p>
           </div>
 
         </template>
@@ -248,6 +255,7 @@ const isLoading = ref(false)
 
 const bookings = ref<(BookingWithDetails & { payment_slip: string | null })[]>([])
 const selectedBooking = ref<(BookingWithDetails & { payment_slip: string | null }) | null>(null)
+const slipImageError = ref(false)
 
 const adminInitial = computed(() => {
   return admin.value?.name?.charAt(0)?.toUpperCase() ?? 'A'
@@ -268,6 +276,7 @@ const loadData = async () => {
 
 const selectBooking = (b: BookingWithDetails & { payment_slip: string | null }) => {
   selectedBooking.value = b
+  slipImageError.value = false
 }
 
 const handleLogout = async () => {

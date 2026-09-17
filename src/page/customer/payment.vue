@@ -2,7 +2,7 @@
   <div class="bg-slate-100 min-h-screen font-kanit pb-10">
 
     <!-- Top Bar -->
-    <div class="bg-[#051329] px-4 py-3 flex items-center gap-3">
+    <div class="bg-[#051329] px-4 py-3 md:py-4 md:px-6 flex items-center gap-3">
       <button type="button" @click="handleBack" class="text-white">
         <i class="fa-solid fa-arrow-left text-base"></i>
       </button>
@@ -16,7 +16,7 @@
       {{ errorMessage }}
     </div>
 
-    <div v-else-if="draft" class="w-full max-w-lg mx-auto px-4 pt-5">
+    <div v-else-if="draft" class="w-full max-w-2xl mx-auto px-4 pt-5">
 
       <!-- สรุปยอด -->
       <section class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-6">

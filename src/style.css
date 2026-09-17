@@ -1,0 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+
+.font-kanit {
+  font-family: 'Kanit', sans-serif;
+}
+
+/* Desktop: center the app and give it a max-width feel */
+@media (min-width: 768px) {
+  body {
+    background-color: #f1f5f9;
+  }
+}

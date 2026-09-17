@@ -216,8 +216,15 @@
                 :src="paymentSlip"
                 alt="สลิปการชำระเงิน"
                 class="w-full object-contain max-h-96"
+                @error="onSlipImageError"
               />
             </div>
+            <p v-if="slipError" class="text-xs text-red-500 mt-2">{{ slipError }}</p>
+          </div>
+
+          <div v-if="selectedBooking && !paymentSlip && !slipLoading" class="bg-white rounded-2xl border border-slate-100 p-5 mb-4">
+            <h2 class="text-sm font-bold text-slate-900 mb-3">สลิปการชำระเงิน</h2>
+            <p class="text-sm text-slate-400">ไม่มีสลิปการชำระเงิน</p>
           </div>
 
           <!-- ปุ่มดำเนินการ -->
@@ -283,6 +290,8 @@ const isProcessing = ref(false)
 const bookings = ref<BookingWithDetails[]>([])
 const selectedBooking = ref<BookingWithDetails | null>(null)
 const paymentSlip = ref<string | null>(null)
+const slipError = ref('')
+const slipLoading = ref(false)
 
 const adminInitial = computed(() => {
   return admin.value?.name?.charAt(0)?.toUpperCase() ?? 'A'
@@ -304,12 +313,24 @@ const loadData = async () => {
 const selectBooking = async (b: BookingWithDetails) => {
   selectedBooking.value = b
   paymentSlip.value = null
+  slipError.value = ''
+  slipLoading.value = true
 
-  // ดึงสลิปการชำระเงิน
-  const payment = await getPaymentByBookingId(b.booking_id)
-  if (payment) {
-    paymentSlip.value = payment.payment_slip
+  try {
+    const payment = await getPaymentByBookingId(b.booking_id)
+    if (payment && payment.payment_slip) {
+      paymentSlip.value = payment.payment_slip
+    }
+  } catch (err) {
+    console.error('Error fetching payment slip:', err)
+  } finally {
+    slipLoading.value = false
   }
+}
+
+const onSlipImageError = () => {
+  slipError.value = 'ไม่สามารถโหลดรูปสลิปได้'
+  paymentSlip.value = null
 }
 
 const handleApprove = async () => {

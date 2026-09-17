@@ -1,17 +1,17 @@
 <template>
   <div class="bg-slate-100 min-h-screen font-kanit pb-24">
-    <div class="w-full max-w-lg mx-auto px-4 py-6">
+    <div class="w-full max-w-2xl mx-auto px-4 py-6 md:py-8">
 
       <!-- Header -->
-      <header class="mb-5">
-        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 mb-1">ค้นหามอเตอร์ไซค์</h1>
-        <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
+      <header class="mb-5 md:mb-6">
+        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 mb-1">ค้นหามอเตอร์ไซค์</h1>
+        <p class="text-xs sm:text-sm md:text-base text-slate-500 leading-relaxed">
           จองมอเตอร์ไซค์ระดับพรีเมียมได้ง่ายๆ เพียงไม่กี่ขั้นตอน
         </p>
       </header>
 
       <!-- Search Card -->
-      <div class="bg-white rounded-2xl p-5 shadow-md border border-slate-100 mb-6">
+      <div class="bg-white rounded-2xl p-5 md:p-6 shadow-md border border-slate-100 mb-6">
         <form @submit.prevent="handleSearch" class="space-y-4">
 
           <!-- คำค้นหา -->

@@ -2,7 +2,7 @@
   <div class="bg-slate-100 min-h-screen font-kanit pb-28">
 
     <!-- Top Bar -->
-    <div class="bg-[#051329] px-4 py-3 flex items-center gap-3">
+    <div class="bg-[#051329] px-4 py-3 md:py-4 md:px-6 flex items-center gap-3">
       <button type="button" @click="goBack" class="text-white">
         <i class="fa-solid fa-arrow-left text-base"></i>
       </button>
@@ -22,7 +22,7 @@
     </div>
 
     <!-- Content -->
-    <div v-else-if="vehicle" class="w-full max-w-lg mx-auto">
+    <div v-else-if="vehicle" class="w-full max-w-2xl mx-auto">
 
       <!-- Vehicle Image -->
       <div class="px-4 pt-5">

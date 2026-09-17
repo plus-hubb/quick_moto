@@ -17,6 +17,7 @@ import AdminVehiclesView from '../page/admin/vehicles-admin.vue'
 import DeliveryReturnView from '../page/admin/delivery-return.vue'
 import PendingApprovalView from '../page/admin/pending-approval.vue'
 import CancellationsView from '../page/admin/cancellations.vue'
+import RentalHistoryView from '../page/admin/rental-history.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -107,6 +108,11 @@ const routes: Array<RouteRecordRaw> = [
   path: '/admin/cancellations',
   name: 'admin-cancellations',
   component: CancellationsView,
+},
+{
+  path: '/admin/rental-history',
+  name: 'admin-rental-history',
+  component: RentalHistoryView,
 },
 ]
 

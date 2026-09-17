@@ -2,7 +2,7 @@
   <div class="bg-slate-100 min-h-screen font-kanit pb-24">
 
     <!-- Top Bar -->
-    <div class="bg-[#051329] px-4 py-3 flex items-center gap-3">
+    <div class="bg-[#051329] px-4 py-3 md:py-4 md:px-6 flex items-center gap-3">
       <button type="button" @click="goBack" class="text-white">
         <i class="fa-solid fa-arrow-left text-base"></i>
       </button>
@@ -11,7 +11,7 @@
       </span>
     </div>
 
-    <div class="w-full max-w-lg mx-auto px-4 pt-6">
+    <div class="w-full max-w-2xl mx-auto px-4 pt-6">
 
       <!-- Floating Search Pill -->
       <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-2 flex items-center gap-2 mb-4">

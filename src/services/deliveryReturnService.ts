@@ -379,6 +379,10 @@ export async function getCancelledBookings(): Promise<(BookingWithDetails & { pa
     supabase.from('payment').select('booking_id, payment_slip').in('booking_id', bookingIds)
   ])
 
+  if (paymentsRes.error) {
+    console.error('getCancelledBookings payment query error:', paymentsRes.error.message)
+  }
+
   const customerMap = new Map((customersRes.data ?? []).map(c => [c.customer_id, c]))
   const vehicleMap = new Map((vehiclesRes.data ?? []).map(v => [v.vehicle_id, v]))
   const paymentMap = new Map((paymentsRes.data ?? []).map(p => [p.booking_id, p.payment_slip]))
@@ -406,10 +410,140 @@ export async function getPaymentByBookingId(bookingId: number): Promise<{ paymen
     .from('payment')
     .select('payment_slip')
     .eq('booking_id', bookingId)
+    .limit(1)
     .maybeSingle()
 
   if (error) {
-    console.error('getPaymentByBookingId error:', error.message)
+    console.error('getPaymentByBookingId error:', error.message, 'booking_id:', bookingId)
+    return null
+  }
+
+  return data
+}
+
+// ==============================
+// ประวัติการเช่า (Completed Bookings)
+// ==============================
+
+export interface CompletedBooking extends BookingWithDetails {
+  delivery_return: DeliveryReturn | null
+  penalty: Penalty | null
+  payment_slip: string | null
+}
+
+/**
+ * ดึงรายการจองสถานะ "เสร็จสิ้น" พร้อมข้อมูลส่ง/รับ/ค่าปรับ
+ */
+export async function getCompletedBookings(): Promise<CompletedBooking[]> {
+  const { data: bookings, error } = await supabase
+    .from('booking')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date')
+    .eq('status', 'เสร็จสิ้น')
+    .order('return_date', { ascending: false })
+
+  if (error) {
+    console.error('getCompletedBookings error:', error.message)
+    throw error
+  }
+
+  if (!bookings || bookings.length === 0) return []
+
+  const customerIds = [...new Set(bookings.map(b => b.customer_id))]
+  const vehicleIds = [...new Set(bookings.map(b => b.vehicle_id))]
+  const bookingIds = bookings.map(b => b.booking_id)
+
+  const [customersRes, vehiclesRes, drRes, penaltyRes, paymentRes] = await Promise.all([
+    supabase.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
+    supabase.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds),
+    supabase.from('delivery_return').select('*').in('booking_id', bookingIds),
+    supabase.from('penalty').select('*').in('booking_id', bookingIds),
+    supabase.from('payment').select('booking_id, payment_slip').in('booking_id', bookingIds)
+  ])
+
+  const customerMap = new Map((customersRes.data ?? []).map(c => [c.customer_id, c]))
+  const vehicleMap = new Map((vehiclesRes.data ?? []).map(v => [v.vehicle_id, v]))
+  const drMap = new Map((drRes.data ?? []).map(dr => [dr.booking_id, dr]))
+  const penaltyMap = new Map((penaltyRes.data ?? []).map(p => [p.booking_id, p]))
+  const paymentMap = new Map((paymentRes.data ?? []).map(p => [p.booking_id, p.payment_slip]))
+
+  return bookings.map(b => ({
+    ...b,
+    customer_name: customerMap.get(b.customer_id)?.name ?? '-',
+    customer_phone: customerMap.get(b.customer_id)?.phone ?? '-',
+    vehicle_brand: vehicleMap.get(b.vehicle_id)?.brand ?? '-',
+    vehicle_model: vehicleMap.get(b.vehicle_id)?.model ?? '-',
+    vehicle_image: vehicleMap.get(b.vehicle_id)?.image ?? null,
+    delivery_return: drMap.get(b.booking_id) ?? null,
+    penalty: penaltyMap.get(b.booking_id) ?? null,
+    payment_slip: paymentMap.get(b.booking_id) ?? null
+  }))
+}
+
+// ==============================
+// ค่าปรับ (Penalty)
+// ==============================
+
+export interface Penalty {
+  penalty_id: number
+  booking_id: number
+  damage: boolean
+  damage_fee: number
+  late_return: boolean
+  late_fee: number
+  missing_item: boolean
+  missing_item_fee: number
+  total_penalty: number
+}
+
+/**
+ * บันทึกค่าปรับ
+ */
+export async function savePenalty(input: {
+  bookingId: number
+  damage: boolean
+  damageFee: number
+  lateReturn: boolean
+  lateFee: number
+  missingItem: boolean
+  missingItemFee: number
+}): Promise<Penalty> {
+  const totalPenalty = input.damageFee + input.lateFee + input.missingItemFee
+
+  const { data, error } = await supabase
+    .from('penalty')
+    .insert({
+      booking_id: input.bookingId,
+      damage: input.damage,
+      damage_fee: input.damageFee,
+      late_return: input.lateReturn,
+      late_fee: input.lateFee,
+      missing_item: input.missingItem,
+      missing_item_fee: input.missingItemFee,
+      total_penalty: totalPenalty
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('savePenalty error:', error.message)
+    throw error
+  }
+
+  return data
+}
+
+/**
+ * ดึงค่าปรับของ booking
+ */
+export async function getPenaltyByBookingId(bookingId: number): Promise<Penalty | null> {
+  const { data, error } = await supabase
+    .from('penalty')
+    .select('*')
+    .eq('booking_id', bookingId)
+    .maybeSingle()
+
+  if (error) {
+    console.error('getPenaltyByBookingId error:', error.message)
     return null
   }
 

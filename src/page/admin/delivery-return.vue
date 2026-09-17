@@ -249,6 +249,96 @@
             </div>
           </div>
 
+          <!-- ค่าปรับ (เฉพาะหน้ารับคืน) -->
+          <template v-if="!isDeliveryMode">
+            <div class="bg-white rounded-2xl border border-slate-100 p-5 mb-4">
+              <h2 class="text-sm font-bold text-slate-900 mb-3">ค่าปรับ</h2>
+
+              <div class="space-y-4">
+                <!-- ความเสียหาย -->
+                <div>
+                  <div class="flex items-center gap-3 mb-2">
+                    <button
+                      type="button"
+                      @click="damage = !damage; if (!damage) damageFee = 0"
+                      class="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors shrink-0"
+                      :class="damage ? 'bg-[#051329] border-[#051329]' : 'border-slate-300 bg-white'"
+                    >
+                      <i v-if="damage" class="fa-solid fa-check text-white text-[10px]"></i>
+                    </button>
+                    <span class="text-sm text-slate-700">มีความเสียหาย</span>
+                  </div>
+                  <div v-if="damage" class="ml-8">
+                    <label class="block text-xs text-slate-400 mb-1">ค่าเสียหาย (บาท)</label>
+                    <input
+                      v-model.number="damageFee"
+                      type="number"
+                      min="0"
+                      placeholder="0.00"
+                      class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <!-- คืนรถlate -->
+                <div>
+                  <div class="flex items-center gap-3 mb-2">
+                    <button
+                      type="button"
+                      @click="lateReturn = !lateReturn; if (!lateReturn) lateFee = 0"
+                      class="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors shrink-0"
+                      :class="lateReturn ? 'bg-[#051329] border-[#051329]' : 'border-slate-300 bg-white'"
+                    >
+                      <i v-if="lateReturn" class="fa-solid fa-check text-white text-[10px]"></i>
+                    </button>
+                    <span class="text-sm text-slate-700">คืนรถล่าช้า</span>
+                  </div>
+                  <div v-if="lateReturn" class="ml-8">
+                    <label class="block text-xs text-slate-400 mb-1">ค่าปรับล่าช้า (บาท)</label>
+                    <input
+                      v-model.number="lateFee"
+                      type="number"
+                      min="0"
+                      placeholder="0.00"
+                      class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <!-- อุปกรณ์หาย -->
+                <div>
+                  <div class="flex items-center gap-3 mb-2">
+                    <button
+                      type="button"
+                      @click="missingItem = !missingItem; if (!missingItem) missingItemFee = 0"
+                      class="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors shrink-0"
+                      :class="missingItem ? 'bg-[#051329] border-[#051329]' : 'border-slate-300 bg-white'"
+                    >
+                      <i v-if="missingItem" class="fa-solid fa-check text-white text-[10px]"></i>
+                    </button>
+                    <span class="text-sm text-slate-700">อุปกรณ์หาย / ไม่ครบ</span>
+                  </div>
+                  <div v-if="missingItem" class="ml-8">
+                    <label class="block text-xs text-slate-400 mb-1">ค่าอุปกรณ์ (บาท)</label>
+                    <input
+                      v-model.number="missingItemFee"
+                      type="number"
+                      min="0"
+                      placeholder="0.00"
+                      class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <!-- ยอดรวม -->
+                <div v-if="totalPenalty > 0" class="bg-red-50 rounded-xl p-3 flex items-center justify-between">
+                  <span class="text-sm font-medium text-red-700">ยอดค่าปรับรวม</span>
+                  <span class="text-lg font-bold text-red-700">{{ totalPenalty.toLocaleString() }} บาท</span>
+                </div>
+              </div>
+            </div>
+          </template>
+
           <!-- ปุ่มส่ง -->
           <button
             type="button"
@@ -283,6 +373,7 @@ import {
   getPendingReturns,
   saveDelivery,
   saveReturn,
+  savePenalty,
   uploadImage
 } from '../../services/deliveryReturnService'
 import type { BookingWithDetails } from '../../services/deliveryReturnService'
@@ -302,6 +393,15 @@ const photos = ref<(string | null)[]>([null, null, null])
 const photoFiles = ref<(File | null)>(null)
 const mileage = ref<number | null>(null)
 const helmet = ref(false)
+
+const damage = ref(false)
+const damageFee = ref<number>(0)
+const lateReturn = ref(false)
+const lateFee = ref<number>(0)
+const missingItem = ref(false)
+const missingItemFee = ref<number>(0)
+
+const totalPenalty = computed(() => damageFee.value + lateFee.value + missingItemFee.value)
 
 const isDeliveryMode = computed(() => route.path === '/admin/delivery')
 
@@ -330,6 +430,12 @@ const selectBooking = (b: BookingWithDetails) => {
   photos.value = [null, null, null]
   mileage.value = null
   helmet.value = false
+  damage.value = false
+  damageFee.value = 0
+  lateReturn.value = false
+  lateFee.value = 0
+  missingItem.value = false
+  missingItemFee.value = 0
 }
 
 const onPhotoCapture = (event: Event, index: number) => {
@@ -396,6 +502,19 @@ const handleSubmit = async () => {
         mileage: mileage.value,
         helmet: helmet.value
       })
+
+      if (damage.value || lateReturn.value || missingItem.value) {
+        await savePenalty({
+          bookingId: selectedBooking.value.booking_id,
+          damage: damage.value,
+          damageFee: damageFee.value,
+          lateReturn: lateReturn.value,
+          lateFee: lateFee.value,
+          missingItem: missingItem.value,
+          missingItemFee: missingItemFee.value
+        })
+      }
+
       alert('บันทึกการรับคืนสำเร็จ!')
     }
 
