@@ -11,6 +11,7 @@ import PaymentView from '../page/customer/payment.vue'
 import BookingsView from '../page/customer/bookings.vue'
 import BookingDetailView from '../page/customer/booking-detail.vue'
 import SearchView from '../page/customer/search.vue'
+import ContactView from '../page/customer/contact.vue'
 import AdminDashboard from '../page/admin/dashboard.vue'
 import AdminVehiclesView from '../page/admin/vehicles-admin.vue'
 import DeliveryReturnView from '../page/admin/delivery-return.vue'
@@ -32,6 +33,11 @@ const routes: Array<RouteRecordRaw> = [
     path: '/profile',
     name: 'profile',
     component: ProfileView,
+  },
+  {
+    path: '/contact',
+    name: 'contact',
+    component: ContactView,
   },
   {
     path: '/home',

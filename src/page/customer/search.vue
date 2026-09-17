@@ -126,7 +126,7 @@
     </div>
   </div>
 
-  <BottomNavigation active="search" />
+  <BottomNavigation active="home" />
 </template>
 
 <script setup lang="ts">

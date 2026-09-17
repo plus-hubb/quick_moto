@@ -39,41 +39,6 @@
       </button>
 
 
-      <!-- Search -->
-      <button
-        type="button"
-        @click="goSearch"
-        :class="[
-          'flex flex-col items-center gap-1 transition-colors',
-          active === 'search'
-            ? 'text-[#051329]'
-            : 'text-slate-400'
-        ]"
-      >
-        <div
-          :class="[
-            'rounded-md px-3 py-1',
-            active === 'search'
-              ? 'bg-[#dce5ff]'
-              : ''
-          ]"
-        >
-          <i class="fa-solid fa-magnifying-glass text-sm"></i>
-        </div>
-
-        <span
-          :class="[
-            'text-[10px]',
-            active === 'search'
-              ? 'font-medium'
-              : ''
-          ]"
-        >
-          Search
-        </span>
-      </button>
-
-
       <!-- Bookings -->
       <button
         type="button"
@@ -143,6 +108,41 @@
         </span>
       </button>
 
+
+      <!-- Contact -->
+      <button
+        type="button"
+        @click="goContact"
+        :class="[
+          'flex flex-col items-center gap-1 transition-colors',
+          active === 'contact'
+            ? 'text-[#051329]'
+            : 'text-slate-400'
+        ]"
+      >
+        <div
+          :class="[
+            'rounded-md px-3 py-1',
+            active === 'contact'
+              ? 'bg-[#dce5ff]'
+              : ''
+          ]"
+        >
+          <i class="fa-solid fa-phone text-sm"></i>
+        </div>
+
+        <span
+          :class="[
+            'text-[10px]',
+            active === 'contact'
+              ? 'font-medium'
+              : ''
+          ]"
+        >
+          Contact
+        </span>
+      </button>
+
     </div>
   </nav>
 </template>
@@ -156,7 +156,7 @@ const router = useRouter()
 
 // หน้าที่กำลังเปิดอยู่
 const props = defineProps<{
-  active: 'home' | 'search' | 'bookings' | 'profile'
+  active: 'home' | 'bookings' | 'profile' | 'contact'
 }>()
 
 
@@ -168,16 +168,16 @@ const goHome = () => {
   router.push('/home')
 }
 
-const goSearch = () => {
-  router.push('/search')
-}
-
 const goBookings = () => {
   router.push('/bookings')
 }
 
 const goProfile = () => {
   router.push('/profile')
+}
+
+const goContact = () => {
+  router.push('/contact')
 }
 
 </script>

@@ -41,6 +41,7 @@
                 <input
                   v-model="searchForm.pickupDate"
                   type="date"
+                  :min="todayStr"
                   class="w-full pl-9 pr-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
                 >
               </div>
@@ -54,6 +55,7 @@
                 <input
                   v-model="searchForm.returnDate"
                   type="date"
+                  :min="searchForm.pickupDate || todayStr"
                   class="w-full pl-9 pr-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
                 >
               </div>
@@ -104,13 +106,15 @@
         </div>
       </section>
 
-      <!-- รถแนะนำ -->
+      <!-- ผลการค้นหา / รถแนะนำ -->
       <section>
-        <h2 class="text-base font-bold text-slate-900 mb-3">รถแนะนำสำหรับคุณ</h2>
+        <h2 class="text-base font-bold text-slate-900 mb-3">
+          {{ hasSearchQuery ? 'ผลการค้นหา' : 'รถแนะนำสำหรับคุณ' }}
+        </h2>
 
         <!-- Loading -->
-        <div v-if="isLoading" class="text-center text-slate-400 text-sm py-10">
-          กำลังโหลดข้อมูล...
+        <div v-if="isLoading || isCheckingAvailability" class="text-center text-slate-400 text-sm py-10">
+          {{ isCheckingAvailability ? 'กำลังเช็ควันว่าง...' : 'กำลังโหลดข้อมูล...' }}
         </div>
 
         <!-- Error -->
@@ -129,6 +133,8 @@
             v-for="vehicle in filteredVehicles"
             :key="vehicle.vehicle_id"
             :vehicle="vehicle"
+            :pickup-date="searchForm.pickupDate"
+            :return-date="searchForm.returnDate"
           />
         </div>
       </section>
@@ -140,28 +146,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import MotorcycleCard from '../../components/MotorcycleCard.vue'
 import BottomNavigation from '../../components/BottomNavigation.vue'
 import { getVehicles, type Vehicle } from '../../services/customerService'
+import { getAvailableUnits } from '../../services/bookingService'
 
-const router = useRouter()
+const route = useRoute()
 
-// ฟอร์มค้นหา (กดค้นหาแล้วจะพาไปหน้า /search พร้อมค่าที่กรอกไว้ — ผลลัพธ์การค้นหาจริงๆ ไปแสดงที่นั่น)
+const todayStr = new Date().toISOString().split('T')[0]
+
+// อ่านค่าเริ่มต้นจาก query string (เผื่อกดค้นหามาจากหน้าอื่น)
 const searchForm = reactive({
-  keyword: '',
-  pickupDate: '',
-  returnDate: ''
+  keyword: (route.query.keyword as string) || '',
+  pickupDate: (route.query.pickupDate as string) || '',
+  returnDate: (route.query.returnDate as string) || ''
 })
 
-// ตัวกรองระบบเกียร์ที่เลือก (ใช้กรอง "รถแนะนำสำหรับคุณ" ในหน้านี้เท่านั้น ไม่เกี่ยวกับการค้นหา)
-const selectedTransmission = ref<'Automatic' | 'Manual'>('Automatic')
+// ตัวกรองระบบเกียร์ที่เลือก
+const selectedTransmission = ref<'Automatic' | 'Manual'>(
+  (route.query.transmission as 'Automatic' | 'Manual') || 'Automatic'
+)
 
 // State สำหรับข้อมูลรถจาก Supabase
 const vehicles = ref<Vehicle[]>([])
+const availableVehicleIds = ref<Set<number> | null>(null)
 const isLoading = ref(false)
+const isCheckingAvailability = ref(false)
 const errorMessage = ref('')
+
+// ตรวจสอบว่ามีการค้นหาหรือไม่
+const hasSearchQuery = computed(() => !!(searchForm.keyword || searchForm.pickupDate || searchForm.returnDate))
+const hasSearchedDates = computed(() => !!(searchForm.pickupDate && searchForm.returnDate))
 
 const loadVehicles = async () => {
   isLoading.value = true
@@ -176,25 +193,76 @@ const loadVehicles = async () => {
   }
 }
 
-// กรอง "รถแนะนำสำหรับคุณ" ตามระบบเกียร์เท่านั้น
+// รวมข้อมูลรถเป็น string เดียวเพื่อค้นหาได้ทั้งยี่ห้อ/รุ่น/ประเภท/ซีซี ในช่องเดียว
+const matchesKeyword = (v: Vehicle, keyword: string) => {
+  if (!keyword) return true
+  const haystack = `${v.brand} ${v.model} ${v.vehicle_type ?? ''} ${v.engine_size ?? ''}cc`.toLowerCase()
+  return haystack.includes(keyword.toLowerCase().trim())
+}
+
+const matchesTransmission = (v: Vehicle) => {
+  const type = (v.vehicle_type ?? '').toLowerCase()
+  return selectedTransmission.value === 'Automatic' ? type.includes('auto') : type.includes('man')
+}
+
+// เช็คว่ารถแต่ละคัน (ที่ผ่าน keyword/transmission แล้ว) ว่างในช่วงวันที่เลือกไหม
+const checkAvailability = async () => {
+  if (!hasSearchedDates.value) {
+    availableVehicleIds.value = null
+    return
+  }
+
+  isCheckingAvailability.value = true
+  try {
+    const candidates = vehicles.value.filter(
+      (v) => matchesKeyword(v, searchForm.keyword) && matchesTransmission(v)
+    )
+
+    const results = await Promise.all(
+      candidates.map(async (v) => {
+        const units = await getAvailableUnits(
+          v.vehicle_id,
+          v.quantity,
+          searchForm.pickupDate,
+          searchForm.returnDate
+        )
+        return { vehicleId: v.vehicle_id, available: units > 0 }
+      })
+    )
+
+    availableVehicleIds.value = new Set(results.filter((r) => r.available).map((r) => r.vehicleId))
+  } finally {
+    isCheckingAvailability.value = false
+  }
+}
+
+// กรองรถตามเงื่อนไขค้นหา ระบบเกียร์ และวันว่าง
 const filteredVehicles = computed(() => {
   return vehicles.value.filter((v) => {
-    const type = (v.vehicle_type ?? '').toLowerCase()
-    return selectedTransmission.value === 'Automatic' ? type.includes('auto') : type.includes('man')
+    if (!matchesKeyword(v, searchForm.keyword)) return false
+    if (!matchesTransmission(v)) return false
+    if (hasSearchedDates.value && availableVehicleIds.value) {
+      return availableVehicleIds.value.has(v.vehicle_id)
+    }
+    return true
   })
 })
 
-// กด "ค้นหารถ" แล้วพาไปหน้า /search พร้อมส่งคำค้นหา/วันที่/ระบบเกียร์ไปด้วยผ่าน query
+// Debounce สำหรับเช็ควันว่าง
+let debounceHandle: ReturnType<typeof setTimeout> | null = null
+watch(
+  () => [searchForm.keyword, searchForm.pickupDate, searchForm.returnDate, selectedTransmission.value],
+  () => {
+    if (debounceHandle) clearTimeout(debounceHandle)
+    debounceHandle = setTimeout(() => {
+      checkAvailability()
+    }, 400)
+  }
+)
+
+// กด "ค้นหารถ" แล้วแสดงผลในหน้า home เลย
 const handleSearch = () => {
-  router.push({
-    path: '/search',
-    query: {
-      ...(searchForm.keyword ? { keyword: searchForm.keyword } : {}),
-      ...(searchForm.pickupDate ? { pickupDate: searchForm.pickupDate } : {}),
-      ...(searchForm.returnDate ? { returnDate: searchForm.returnDate } : {}),
-      transmission: selectedTransmission.value
-    }
-  })
+  checkAvailability()
 }
 
 onMounted(() => {
