@@ -204,8 +204,15 @@ const showFullTerms = ref(false)
 const availableUnits = ref(0)
 const isCheckingAvailability = ref(false)
 
-const todayStr = new Date().toISOString().split('T')[0]
-const tomorrowStr = new Date(Date.now() + 86400000).toISOString().split('T')[0]
+const todayStr = (() => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+})()
+const tomorrowStr = (() => {
+  const d = new Date()
+  d.setDate(d.getDate() + 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+})()
 
 // ถ้ามีวันที่ส่งมาจากหน้า search/detail (ผ่าน query) ใช้ค่านั้นเป็นค่าเริ่มต้นแทน
 const initialPickupDate = (route.query.pickupDate as string) || todayStr
