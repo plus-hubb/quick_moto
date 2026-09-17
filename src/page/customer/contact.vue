@@ -1,14 +1,17 @@
 <template>
   <div class="bg-slate-100 min-h-screen font-kanit pb-24">
-    <div class="w-full max-w-md mx-auto px-4 py-6">
 
-      <!-- Header -->
-      <header class="mb-5">
-        <h1 class="text-2xl font-bold text-slate-900 mb-1">ติดต่อเรา</h1>
-        <p class="text-sm text-slate-500 leading-relaxed">
-          ช่องทางการติดต่อสอบถามข้อมูลเพิ่มเติม
-        </p>
-      </header>
+    <!-- Top Bar -->
+    <div class="bg-[#051329] px-4 py-3 flex items-center gap-3">
+      <button type="button" @click="goBack" class="text-white">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+      </button>
+      <span class="inline-block bg-white/10 text-white text-sm font-medium px-5 py-1.5 rounded-full border border-white/20">
+        ติดต่อเรา
+      </span>
+    </div>
+
+    <div class="w-full max-w-lg mx-auto px-4 pt-6">
 
       <!-- Contact Cards -->
       <div class="space-y-4">
@@ -94,7 +97,14 @@
 
 <script setup lang="ts">
 
+import { useRouter } from 'vue-router'
 import BottomNavigation from '../../components/BottomNavigation.vue'
+
+const router = useRouter()
+
+const goBack = () => {
+  router.back()
+}
 
 </script>
 

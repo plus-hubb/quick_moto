@@ -1,11 +1,17 @@
 <template>
   <div class="bg-slate-100 min-h-screen font-kanit pb-24">
-    <div class="w-full max-w-md mx-auto px-4 py-6">
 
-      <!-- Header -->
-      <header class="mb-5">
-        <h1 class="text-2xl font-bold text-slate-900">ประวัติการจองรถจักรยานยนต์</h1>
-      </header>
+    <!-- Top Bar -->
+    <div class="bg-[#051329] px-4 py-3 flex items-center gap-3">
+      <button type="button" @click="goBack" class="text-white">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+      </button>
+      <span class="inline-block bg-white/10 text-white text-sm font-medium px-5 py-1.5 rounded-full border border-white/20">
+        ประวัติการจอง
+      </span>
+    </div>
+
+    <div class="w-full max-w-lg mx-auto px-4 pt-6">
 
       <!-- Tabs -->
       <div class="bg-white rounded-xl p-1 flex gap-1 mb-6 shadow-sm border border-slate-100">
@@ -152,6 +158,10 @@ const formatPrice = (price: number) => Number(price).toLocaleString('en-US')
 
 const formatDateTh = (dateStr: string) =>
   new Date(dateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })
+
+const goBack = () => {
+  router.back()
+}
 
 const loadBookings = async () => {
   isLoading.value = true

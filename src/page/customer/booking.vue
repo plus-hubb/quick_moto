@@ -2,7 +2,10 @@
   <div class="bg-slate-100 min-h-screen font-kanit pb-28">
 
     <!-- Top Bar -->
-    <div class="bg-[#051329] px-4 py-3">
+    <div class="bg-[#051329] px-4 py-3 flex items-center gap-3">
+      <button type="button" @click="goBack" class="text-white">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+      </button>
       <span class="inline-block bg-white/10 text-white text-sm font-medium px-5 py-1.5 rounded-full border border-white/20">
         จองรถ
       </span>
@@ -18,11 +21,11 @@
       {{ errorMessage }}
     </div>
 
-    <div v-else-if="vehicle" class="w-full max-w-md mx-auto px-4">
+    <div v-else-if="vehicle" class="w-full max-w-lg mx-auto px-4">
 
       <!-- Vehicle Image + Info -->
       <div class="pt-5">
-        <div class="w-full h-48 sm:h-56 bg-slate-200 rounded-2xl overflow-hidden">
+        <div class="w-full h-48 sm:h-64 bg-slate-200 rounded-2xl overflow-hidden">
           <img
             v-if="vehicle.image"
             :src="vehicle.image"
@@ -186,6 +189,10 @@ import {
 
 const route = useRoute()
 const router = useRouter()
+
+const goBack = () => {
+  router.back()
+}
 
 const vehicle = ref<Vehicle | null>(null)
 const customerId = ref<number | null>(null)

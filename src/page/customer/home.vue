@@ -1,11 +1,11 @@
 <template>
   <div class="bg-slate-100 min-h-screen font-kanit pb-24">
-    <div class="w-full max-w-md mx-auto px-4 py-6">
+    <div class="w-full max-w-lg mx-auto px-4 py-6">
 
       <!-- Header -->
       <header class="mb-5">
-        <h1 class="text-2xl font-bold text-slate-900 mb-1">ค้นหามอเตอร์ไซค์</h1>
-        <p class="text-sm text-slate-500 leading-relaxed">
+        <h1 class="text-xl sm:text-2xl font-bold text-slate-900 mb-1">ค้นหามอเตอร์ไซค์</h1>
+        <p class="text-xs sm:text-sm text-slate-500 leading-relaxed">
           จองมอเตอร์ไซค์ระดับพรีเมียมได้ง่ายๆ เพียงไม่กี่ขั้นตอน
         </p>
       </header>

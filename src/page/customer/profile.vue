@@ -1,457 +1,258 @@
 <template>
-  <div class="min-h-screen bg-[#f8f6fa] font-kanit flex flex-col">
+  <div class="bg-slate-100 min-h-screen font-kanit pb-24">
 
-    <!-- Header -->
-    <header class="px-5 pt-5 pb-3">
-      <div class="flex items-center gap-3">
+    <!-- Top Bar -->
+    <div class="bg-[#051329] px-4 py-3 flex items-center gap-3">
+      <button type="button" @click="goBack" class="text-white">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+      </button>
+      <span class="inline-block bg-white/10 text-white text-sm font-medium px-5 py-1.5 rounded-full border border-white/20">
+        แก้ไขโปรไฟล์
+      </span>
+    </div>
 
-        <button
-          type="button"
-          @click="goBack"
-          class="w-9 h-9 flex items-center justify-center"
-        >
-          <i class="fa-solid fa-arrow-left text-slate-800"></i>
-        </button>
+    <!-- Loading -->
+    <div v-if="isLoading" class="text-center text-slate-400 text-sm py-16">
+      กำลังโหลดข้อมูล...
+    </div>
 
-        <h1 class="text-lg font-bold text-slate-900">
-          แก้ไขโปรไฟล์
-        </h1>
+    <!-- Customer -->
+    <div v-else-if="customer" class="w-full max-w-lg mx-auto px-4 pt-6">
 
+      <!-- Profile Image -->
+      <div class="flex flex-col items-center pt-2 mb-6">
+        <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden">
+          <i class="fa-solid fa-user text-3xl sm:text-4xl text-slate-300"></i>
+          <button
+            type="button"
+            class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#051329] text-white flex items-center justify-center border-2 border-white"
+          >
+            <i class="fa-solid fa-camera text-xs"></i>
+          </button>
+        </div>
+        <p class="text-xs text-slate-400 mt-2">เปลี่ยนรูปโปรไฟล์</p>
       </div>
-    </header>
 
-
-    <!-- Main -->
-    <main class="flex-1 px-5 pb-28">
-
-      <!-- Loading -->
-      <div
-        v-if="isLoading"
-        class="flex justify-center items-center py-20 text-slate-500"
-      >
-        กำลังโหลดข้อมูล...
-      </div>
-
-
-      <!-- Customer -->
-      <div
-        v-else-if="customer"
-        class="space-y-5"
-      >
-
-        <!-- Profile Image -->
-        <div class="flex flex-col items-center pt-2">
-
-          <div
-            class="relative w-24 h-24 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden"
-          >
-
-            <i
-              class="fa-solid fa-user text-3xl text-slate-300"
-            ></i>
-
-            <button
-              type="button"
-              class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#051329] text-white flex items-center justify-center border-2 border-white"
-            >
-              <i class="fa-solid fa-camera text-xs"></i>
-            </button>
-
+      <!-- Name -->
+      <div class="mb-4">
+        <label class="block text-xs text-slate-500 mb-1.5">ชื่อ-นามสกุล</label>
+        <div class="bg-white border border-slate-100 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-sm">
+          <i class="fa-regular fa-user text-slate-400 text-sm"></i>
+          <div v-if="!isEditing" class="flex-1 text-sm text-slate-800">
+            {{ customer.name || '-' }}
           </div>
-
-          <p class="text-xs text-slate-400 mt-2">
-            เปลี่ยนรูปโปรไฟล์
-          </p>
-
-        </div>
-
-
-        <!-- Name -->
-        <div>
-
-          <label class="block text-xs text-slate-500 mb-1.5">
-            ชื่อ-นามสกุล
-          </label>
-
-          <div
-            class="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3"
-          >
-
-            <i
-              class="fa-regular fa-user text-slate-400 text-sm"
-            ></i>
-
-            <div
-              v-if="!isEditing"
-              class="flex-1 text-sm text-slate-800"
-            >
-              {{ customer.name || '-' }}
-            </div>
-
-            <input
-              v-else
-              v-model="editName"
-              type="text"
-              class="flex-1 text-sm text-slate-800 outline-none bg-transparent"
-              placeholder="ชื่อ-นามสกุล"
-            />
-
-            <button
-              v-if="!isEditing && !isChangingPassword"
-              type="button"
-              class="text-xs text-slate-600 flex items-center gap-1"
-              @click="editProfile"
-            >
-              <i class="fa-solid fa-pen text-[10px]"></i>
-              แก้ไข
-            </button>
-
-          </div>
-
-        </div>
-
-
-        <!-- Email -->
-        <div>
-
-          <label class="block text-xs text-slate-500 mb-1.5">
-            อีเมล
-          </label>
-
-          <div
-            class="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3"
-          >
-
-            <i
-              class="fa-regular fa-envelope text-slate-400 text-sm"
-            ></i>
-
-            <span class="flex-1 text-sm text-slate-800 truncate">
-              {{ customer.email || '-' }}
-            </span>
-
-          </div>
-
-        </div>
-
-
-        <!-- Phone -->
-        <div>
-
-          <label class="block text-xs text-slate-500 mb-1.5">
-            เบอร์โทรศัพท์
-          </label>
-
-          <div
-            class="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3"
-          >
-
-            <i
-              class="fa-solid fa-phone text-slate-400 text-sm"
-            ></i>
-
-            <div
-              v-if="!isEditing"
-              class="flex-1 text-sm text-slate-800"
-            >
-              {{ customer.phone || '-' }}
-            </div>
-
-            <input
-              v-else
-              :value="editPhone"
-              @input="handlePhoneInput"
-              type="tel"
-              inputmode="numeric"
-              maxlength="10"
-              class="flex-1 text-sm text-slate-800 outline-none bg-transparent"
-              placeholder="เบอร์โทรศัพท์"
-            />
-
-            <button
-              v-if="!isEditing && !isChangingPassword"
-              type="button"
-              class="text-xs text-slate-600 flex items-center gap-1"
-              @click="editProfile"
-            >
-              <i class="fa-solid fa-pen text-[10px]"></i>
-              แก้ไข
-            </button>
-
-          </div>
-
-        </div>
-
-
-        <!-- Password -->
-        <div>
-
-          <label class="block text-xs text-slate-500 mb-1.5">
-            รหัสผ่าน
-          </label>
-
-
-          <!-- Normal Password -->
-          <div
-            v-if="!isChangingPassword"
-            class="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3"
-          >
-
-            <i
-              class="fa-solid fa-lock text-slate-400 text-sm"
-            ></i>
-
-            <span
-              class="flex-1 text-sm text-slate-800 tracking-widest"
-            >
-              ••••••••••••
-            </span>
-
-            <button
-              type="button"
-              class="text-xs text-slate-600 flex items-center gap-1"
-              @click="changePassword"
-            >
-              <i class="fa-solid fa-pen text-[10px]"></i>
-              แก้ไข
-            </button>
-
-          </div>
-
-
-          <!-- Change Password -->
-          <div
+          <input
             v-else
-            class="bg-white border border-slate-200 rounded-xl p-4 space-y-4"
+            v-model="editName"
+            type="text"
+            class="flex-1 text-sm text-slate-800 outline-none bg-transparent"
+            placeholder="ชื่อ-นามสกุล"
+          />
+          <button
+            v-if="!isEditing && !isChangingPassword"
+            type="button"
+            class="text-xs text-slate-600 flex items-center gap-1"
+            @click="editProfile"
           >
+            <i class="fa-solid fa-pen text-[10px]"></i>
+            แก้ไข
+          </button>
+        </div>
+      </div>
 
-            <!-- Current Password -->
-            <div>
+      <!-- Email -->
+      <div class="mb-4">
+        <label class="block text-xs text-slate-500 mb-1.5">อีเมล</label>
+        <div class="bg-white border border-slate-100 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-sm">
+          <i class="fa-regular fa-envelope text-slate-400 text-sm"></i>
+          <span class="flex-1 text-sm text-slate-800 truncate">
+            {{ customer.email || '-' }}
+          </span>
+        </div>
+      </div>
 
-              <label class="block text-xs text-slate-500 mb-1.5">
-                รหัสผ่านเดิม
-              </label>
+      <!-- Phone -->
+      <div class="mb-4">
+        <label class="block text-xs text-slate-500 mb-1.5">เบอร์โทรศัพท์</label>
+        <div class="bg-white border border-slate-100 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-sm">
+          <i class="fa-solid fa-phone text-slate-400 text-sm"></i>
+          <div v-if="!isEditing" class="flex-1 text-sm text-slate-800">
+            {{ customer.phone || '-' }}
+          </div>
+          <input
+            v-else
+            :value="editPhone"
+            @input="handlePhoneInput"
+            type="tel"
+            inputmode="numeric"
+            maxlength="10"
+            class="flex-1 text-sm text-slate-800 outline-none bg-transparent"
+            placeholder="เบอร์โทรศัพท์"
+          />
+          <button
+            v-if="!isEditing && !isChangingPassword"
+            type="button"
+            class="text-xs text-slate-600 flex items-center gap-1"
+            @click="editProfile"
+          >
+            <i class="fa-solid fa-pen text-[10px]"></i>
+            แก้ไข
+          </button>
+        </div>
+      </div>
 
-              <div
-                class="border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3"
-              >
+      <!-- Password -->
+      <div class="mb-4">
+        <label class="block text-xs text-slate-500 mb-1.5">รหัสผ่าน</label>
 
-                <i
-                  class="fa-solid fa-lock text-slate-400 text-sm"
-                ></i>
+        <!-- Normal Password -->
+        <div
+          v-if="!isChangingPassword"
+          class="bg-white border border-slate-100 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-sm"
+        >
+          <i class="fa-solid fa-lock text-slate-400 text-sm"></i>
+          <span class="flex-1 text-sm text-slate-800 tracking-widest">••••••••••••</span>
+          <button
+            type="button"
+            class="text-xs text-slate-600 flex items-center gap-1"
+            @click="changePassword"
+          >
+            <i class="fa-solid fa-pen text-[10px]"></i>
+            แก้ไข
+          </button>
+        </div>
 
-                <input
-                  v-model="currentPassword"
-                  :type="showCurrentPassword ? 'text' : 'password'"
-                  class="flex-1 text-sm outline-none bg-transparent"
-                  placeholder="กรอกรหัสผ่านเดิม"
-                  autocomplete="current-password"
-                />
+        <!-- Change Password -->
+        <div v-else class="bg-white border border-slate-100 rounded-2xl p-4 space-y-4 shadow-sm">
 
-                <button
-                  type="button"
-                  @click="showCurrentPassword = !showCurrentPassword"
-                  class="text-slate-400"
-                  aria-label="แสดงหรือซ่อนรหัสผ่านเดิม"
-                >
-                  <i
-                    :class="
-                      showCurrentPassword
-                        ? 'fa-solid fa-eye-slash'
-                        : 'fa-solid fa-eye'
-                    "
-                  ></i>
-                </button>
-
-              </div>
-
-            </div>
-
-
-            <!-- New Password -->
-            <div>
-
-              <label class="block text-xs text-slate-500 mb-1.5">
-                รหัสผ่านใหม่
-              </label>
-
-              <div
-                class="border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3"
-              >
-
-                <i
-                  class="fa-solid fa-lock text-slate-400 text-sm"
-                ></i>
-
-                <input
-                  v-model="newPassword"
-                  :type="showNewPassword ? 'text' : 'password'"
-                  class="flex-1 text-sm outline-none bg-transparent"
-                  placeholder="กรอกรหัสผ่านใหม่"
-                  autocomplete="new-password"
-                />
-
-                <button
-                  type="button"
-                  @click="showNewPassword = !showNewPassword"
-                  class="text-slate-400"
-                  aria-label="แสดงหรือซ่อนรหัสผ่านใหม่"
-                >
-                  <i
-                    :class="
-                      showNewPassword
-                        ? 'fa-solid fa-eye-slash'
-                        : 'fa-solid fa-eye'
-                    "
-                  ></i>
-                </button>
-
-              </div>
-
-            </div>
-
-
-            <!-- Confirm Password -->
-            <div>
-
-              <label class="block text-xs text-slate-500 mb-1.5">
-                ยืนยันรหัสผ่านใหม่
-              </label>
-
-              <div
-                class="border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3"
-              >
-
-                <i
-                  class="fa-solid fa-lock text-slate-400 text-sm"
-                ></i>
-
-                <input
-                  v-model="confirmPassword"
-                  :type="showConfirmPassword ? 'text' : 'password'"
-                  class="flex-1 text-sm outline-none bg-transparent"
-                  placeholder="กรอกรหัสผ่านอีกครั้ง"
-                  autocomplete="new-password"
-                />
-
-                <button
-                  type="button"
-                  @click="showConfirmPassword = !showConfirmPassword"
-                  class="text-slate-400"
-                  aria-label="แสดงหรือซ่อนยืนยันรหัสผ่าน"
-                >
-                  <i
-                    :class="
-                      showConfirmPassword
-                        ? 'fa-solid fa-eye-slash'
-                        : 'fa-solid fa-eye'
-                    "
-                  ></i>
-                </button>
-
-              </div>
-
-            </div>
-
-
-            <!-- Password Buttons -->
-            <div class="grid grid-cols-2 gap-3 pt-1">
-
+          <!-- Current Password -->
+          <div>
+            <label class="block text-xs text-slate-500 mb-1.5">รหัสผ่านเดิม</label>
+            <div class="border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3">
+              <i class="fa-solid fa-lock text-slate-400 text-sm"></i>
+              <input
+                v-model="currentPassword"
+                :type="showCurrentPassword ? 'text' : 'password'"
+                class="flex-1 text-sm outline-none bg-transparent"
+                placeholder="กรอกรหัสผ่านเดิม"
+                autocomplete="current-password"
+              />
               <button
                 type="button"
-                @click="cancelPasswordChange"
-                :disabled="isChangingPasswordSaving"
-                class="bg-slate-200 text-slate-700 font-medium py-3 rounded-xl disabled:opacity-50"
+                @click="showCurrentPassword = !showCurrentPassword"
+                class="text-slate-400"
               >
-                ยกเลิก
+                <i :class="showCurrentPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
               </button>
+            </div>
+          </div>
 
+          <!-- New Password -->
+          <div>
+            <label class="block text-xs text-slate-500 mb-1.5">รหัสผ่านใหม่</label>
+            <div class="border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3">
+              <i class="fa-solid fa-lock text-slate-400 text-sm"></i>
+              <input
+                v-model="newPassword"
+                :type="showNewPassword ? 'text' : 'password'"
+                class="flex-1 text-sm outline-none bg-transparent"
+                placeholder="กรอกรหัสผ่านใหม่"
+                autocomplete="new-password"
+              />
               <button
                 type="button"
-                @click="savePassword"
-                :disabled="isChangingPasswordSaving"
-                class="bg-[#051329] text-white font-medium py-3 rounded-xl disabled:opacity-50"
+                @click="showNewPassword = !showNewPassword"
+                class="text-slate-400"
               >
-
-                <span v-if="!isChangingPasswordSaving">
-                  เปลี่ยนรหัสผ่าน
-                </span>
-
-                <span v-else>
-                  กำลังบันทึก...
-                </span>
-
+                <i :class="showNewPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
               </button>
-
             </div>
+          </div>
 
+          <!-- Confirm Password -->
+          <div>
+            <label class="block text-xs text-slate-500 mb-1.5">ยืนยันรหัสผ่านใหม่</label>
+            <div class="border border-slate-200 rounded-xl px-4 py-3 flex items-center gap-3">
+              <i class="fa-solid fa-lock text-slate-400 text-sm"></i>
+              <input
+                v-model="confirmPassword"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                class="flex-1 text-sm outline-none bg-transparent"
+                placeholder="กรอกรหัสผ่านอีกครั้ง"
+                autocomplete="new-password"
+              />
+              <button
+                type="button"
+                @click="showConfirmPassword = !showConfirmPassword"
+                class="text-slate-400"
+              >
+                <i :class="showConfirmPassword ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye'"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Password Buttons -->
+          <div class="grid grid-cols-2 gap-3 pt-1">
+            <button
+              type="button"
+              @click="cancelPasswordChange"
+              :disabled="isChangingPasswordSaving"
+              class="bg-slate-200 text-slate-700 font-medium py-3 rounded-xl disabled:opacity-50"
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="button"
+              @click="savePassword"
+              :disabled="isChangingPasswordSaving"
+              class="bg-[#051329] text-white font-medium py-3 rounded-xl disabled:opacity-50"
+            >
+              <span v-if="!isChangingPasswordSaving">เปลี่ยนรหัสผ่าน</span>
+              <span v-else>กำลังบันทึก...</span>
+            </button>
           </div>
 
         </div>
-
-
-        <!-- Profile Save / Cancel -->
-        <div
-          v-if="isEditing"
-          class="grid grid-cols-2 gap-3 mt-6"
-        >
-
-          <button
-            type="button"
-            @click="cancelEdit"
-            :disabled="isSaving"
-            class="w-full bg-slate-200 text-slate-700 font-medium py-3.5 rounded-xl transition active:scale-[0.99] disabled:opacity-50"
-          >
-            ยกเลิก
-          </button>
-
-          <button
-            type="button"
-            @click="saveProfile"
-            :disabled="isSaving"
-            class="w-full bg-[#051329] text-white font-medium py-3.5 rounded-xl shadow-lg transition active:scale-[0.99] disabled:opacity-50"
-          >
-
-            <span v-if="!isSaving">
-              บันทึก
-            </span>
-
-            <span v-else>
-              กำลังบันทึก...
-            </span>
-
-          </button>
-
-        </div>
-
-
-        <!-- Logout -->
-        <button
-          v-if="!isEditing && !isChangingPassword"
-          type="button"
-          @click="handleLogout"
-          class="w-full mt-12 bg-[#051329] hover:bg-[#0a1f3d] text-white font-medium py-3.5 rounded-xl shadow-lg transition active:scale-[0.99]"
-        >
-          ออกจากระบบ
-        </button>
-
       </div>
 
+      <!-- Profile Save / Cancel -->
+      <div v-if="isEditing" class="grid grid-cols-2 gap-3 mt-6">
+        <button
+          type="button"
+          @click="cancelEdit"
+          :disabled="isSaving"
+          class="w-full bg-slate-200 text-slate-700 font-medium py-3 rounded-xl transition active:scale-[0.99] disabled:opacity-50"
+        >
+          ยกเลิก
+        </button>
+        <button
+          type="button"
+          @click="saveProfile"
+          :disabled="isSaving"
+          class="w-full bg-[#051329] text-white font-medium py-3 rounded-xl shadow-lg transition active:scale-[0.99] disabled:opacity-50"
+        >
+          <span v-if="!isSaving">บันทึก</span>
+          <span v-else>กำลังบันทึก...</span>
+        </button>
+      </div>
 
-      <!-- No Customer -->
-      <div
-        v-else
-        class="bg-white rounded-2xl p-6 text-center mt-5"
+      <!-- Logout -->
+      <button
+        v-if="!isEditing && !isChangingPassword"
+        type="button"
+        @click="handleLogout"
+        class="w-full mt-8 bg-[#051329] hover:bg-[#0a1f3d] text-white font-medium py-3 rounded-xl shadow-lg transition active:scale-[0.99]"
       >
+        ออกจากระบบ
+      </button>
 
-        <i
-          class="fa-solid fa-circle-exclamation text-red-400 text-2xl mb-3"
-        ></i>
+    </div>
 
-        <p class="text-red-500 font-medium">
-          ไม่พบข้อมูลลูกค้า
-        </p>
-
+    <!-- No Customer -->
+    <div v-else class="w-full max-w-lg mx-auto px-4 pt-10">
+      <div class="bg-white rounded-2xl p-6 text-center shadow-sm border border-slate-100">
+        <i class="fa-solid fa-circle-exclamation text-red-400 text-2xl mb-3"></i>
+        <p class="text-red-500 font-medium">ไม่พบข้อมูลลูกค้า</p>
         <button
           type="button"
           @click="goSignin"
@@ -459,15 +260,11 @@
         >
           กลับไปเข้าสู่ระบบ
         </button>
-
       </div>
-
-    </main>
-
-
-    
+    </div>
 
   </div>
+
   <BottomNavigation active="profile" />
 </template>
 

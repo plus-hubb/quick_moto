@@ -2,7 +2,7 @@
   <nav
     class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 px-5 py-2.5"
   >
-    <div class="max-w-md mx-auto grid grid-cols-4 items-center">
+    <div class="max-w-lg mx-auto grid grid-cols-4 items-center">
 
       <!-- Home -->
       <button

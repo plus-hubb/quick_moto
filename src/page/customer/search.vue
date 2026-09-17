@@ -1,15 +1,17 @@
 <template>
-  <div class="bg-slate-50 min-h-screen font-kanit pb-24">
+  <div class="bg-slate-100 min-h-screen font-kanit pb-24">
 
-    <!-- Hero Header -->
-    <div class="bg-[#051329] px-4 pt-6 pb-14 rounded-b-3xl">
-      <div class="w-full max-w-md mx-auto">
-        <h1 class="text-xl font-bold text-white mb-1">ค้นหา & กรองรถ</h1>
-        <p class="text-xs text-white/60">พิมพ์ชื่อรุ่น ยี่ห้อ หรือ cc แล้วผลลัพธ์จะขึ้นทันที</p>
-      </div>
+    <!-- Top Bar -->
+    <div class="bg-[#051329] px-4 py-3 flex items-center gap-3">
+      <button type="button" @click="goBack" class="text-white">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+      </button>
+      <span class="inline-block bg-white/10 text-white text-sm font-medium px-5 py-1.5 rounded-full border border-white/20">
+        ค้นหา & กรองรถ
+      </span>
     </div>
 
-    <div class="w-full max-w-md mx-auto px-4 -mt-8">
+    <div class="w-full max-w-lg mx-auto px-4 pt-6">
 
       <!-- Floating Search Pill -->
       <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-2 flex items-center gap-2 mb-4">
@@ -248,6 +250,10 @@ watch(
     }, 400)
   }
 )
+
+const goBack = () => {
+  router.back()
+}
 
 const loadVehicles = async () => {
   isLoading.value = true

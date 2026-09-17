@@ -2,7 +2,10 @@
   <div class="bg-slate-100 min-h-screen font-kanit pb-28">
 
     <!-- Top Bar -->
-    <div class="bg-[#051329] px-4 py-3">
+    <div class="bg-[#051329] px-4 py-3 flex items-center gap-3">
+      <button type="button" @click="goBack" class="text-white">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+      </button>
       <span class="inline-block bg-white/10 text-white text-sm font-medium px-5 py-1.5 rounded-full border border-white/20">
         จองรถ
       </span>
@@ -19,7 +22,7 @@
     </div>
 
     <!-- Content -->
-    <div v-else-if="vehicle" class="w-full max-w-md mx-auto">
+    <div v-else-if="vehicle" class="w-full max-w-lg mx-auto">
 
       <!-- Vehicle Image -->
       <div class="px-4 pt-5">
@@ -112,6 +115,10 @@ import { getVehicleById, type Vehicle } from '../../services/customerService'
 
 const route = useRoute()
 const router = useRouter()
+
+const goBack = () => {
+  router.back()
+}
 
 const vehicle = ref<Vehicle | null>(null)
 const isLoading = ref(false)

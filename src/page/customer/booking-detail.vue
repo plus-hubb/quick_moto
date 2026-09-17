@@ -2,7 +2,10 @@
   <div class="bg-slate-100 min-h-screen font-kanit pb-24">
 
     <!-- Top Bar -->
-    <div class="bg-[#051329] px-4 py-3">
+    <div class="bg-[#051329] px-4 py-3 flex items-center gap-3">
+      <button type="button" @click="goBack" class="text-white">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+      </button>
       <span class="inline-block bg-white/10 text-white text-sm font-medium px-5 py-1.5 rounded-full border border-white/20">
         รายละเอียดการจอง
       </span>
@@ -18,23 +21,23 @@
       {{ errorMessage }}
     </div>
 
-    <div v-else-if="booking" class="w-full max-w-md mx-auto px-4 pt-6">
+    <div v-else-if="booking" class="w-full max-w-lg mx-auto px-4 pt-6">
 
       <!-- Status Icon + Heading -->
       <div class="flex flex-col items-center text-center mb-6">
         <div
-          class="w-16 h-16 rounded-full flex items-center justify-center mb-3"
+          class="w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mb-3"
           :class="statusDisplay.iconBg"
         >
-          <i class="fa-solid text-2xl text-white" :class="statusDisplay.icon"></i>
+          <i class="fa-solid text-xl sm:text-2xl text-white" :class="statusDisplay.icon"></i>
         </div>
-        <h1 class="text-lg font-bold text-slate-900">{{ statusDisplay.heading }}</h1>
+        <h1 class="text-base sm:text-lg font-bold text-slate-900">{{ statusDisplay.heading }}</h1>
         <p class="text-xs text-slate-400 mt-1">รหัสการจองของคุณ: {{ booking.booking_code }}</p>
       </div>
 
       <!-- Vehicle Card -->
       <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-6">
-        <div class="w-full h-40 bg-slate-200 rounded-xl overflow-hidden mb-4">
+        <div class="w-full h-40 sm:h-48 bg-slate-200 rounded-xl overflow-hidden mb-4">
           <img
             v-if="booking.vehicle?.image"
             :src="booking.vehicle.image"
@@ -48,7 +51,7 @@
 
         <div class="flex items-start justify-between mb-4">
           <div>
-            <h2 class="text-base font-bold text-slate-900">
+            <h2 class="text-sm sm:text-base font-bold text-slate-900">
               {{ booking.vehicle?.brand }} {{ booking.vehicle?.model }}
             </h2>
             <p class="text-xs text-slate-500 mt-0.5">
@@ -57,7 +60,7 @@
           </div>
           <div class="text-right shrink-0">
             <p class="text-xs text-slate-400">ราคารวม</p>
-            <p class="text-base font-bold text-slate-900">฿{{ formatPrice(booking.rental_price) }}</p>
+            <p class="text-sm sm:text-base font-bold text-slate-900">฿{{ formatPrice(booking.rental_price) }}</p>
           </div>
         </div>
 
@@ -147,6 +150,10 @@ import {
 
 const route = useRoute()
 const router = useRouter()
+
+const goBack = () => {
+  router.back()
+}
 
 const booking = ref<BookingWithVehicle | null>(null)
 const isLoading = ref(false)

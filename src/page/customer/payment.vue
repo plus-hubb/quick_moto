@@ -2,7 +2,10 @@
   <div class="bg-slate-100 min-h-screen font-kanit pb-10">
 
     <!-- Top Bar -->
-    <div class="bg-[#051329] px-4 py-3">
+    <div class="bg-[#051329] px-4 py-3 flex items-center gap-3">
+      <button type="button" @click="handleBack" class="text-white">
+        <i class="fa-solid fa-arrow-left text-base"></i>
+      </button>
       <span class="inline-block bg-white/10 text-white text-sm font-medium px-5 py-1.5 rounded-full border border-white/20">
         ชำระเงิน
       </span>
@@ -13,12 +16,12 @@
       {{ errorMessage }}
     </div>
 
-    <div v-else-if="draft" class="w-full max-w-md mx-auto px-4 pt-5">
+    <div v-else-if="draft" class="w-full max-w-lg mx-auto px-4 pt-5">
 
       <!-- สรุปยอด -->
       <section class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 mb-6">
         <p class="text-sm text-red-500 mb-1">ยอดที่ต้องชำระครั้งนี้</p>
-        <p class="text-3xl font-bold text-red-500 mb-4">฿{{ formattedDeposit }}</p>
+        <p class="text-2xl sm:text-3xl font-bold text-red-500 mb-4">฿{{ formattedDeposit }}</p>
 
         <div class="flex items-center justify-between text-sm py-2 border-t border-slate-100">
           <span class="text-slate-500">ค่ามัดจำ</span>
@@ -27,7 +30,7 @@
 
         <div class="pt-2 border-t border-slate-100">
           <p class="text-sm font-bold text-slate-900 mb-1">ยอดรวมที่ต้องชำระที่หน้าร้าน</p>
-          <p class="text-xl font-bold text-slate-900 mb-2">฿{{ formattedRental }}</p>
+          <p class="text-lg sm:text-xl font-bold text-slate-900 mb-2">฿{{ formattedRental }}</p>
           <div class="flex items-center justify-between text-sm">
             <span class="text-slate-500">ค่าเช่ารถมอเตอร์ไซค์ ({{ rentalDays }} วัน)</span>
             <span class="font-medium text-slate-900">฿{{ formattedRental }}</span>
@@ -230,6 +233,29 @@ const handleContinue = () => {
   } else {
     router.push('/home')
   }
+}
+
+const handleBack = async () => {
+  if (!slipUploaded.value && draft.value) {
+    const confirmLeave = window.confirm(
+      'หากย้อนกลับ การจองจะถูกยกเลิกและรถจะกลับไปว่างทันที ต้องการดำเนินการต่อหรือไม่?'
+    )
+
+    if (!confirmLeave) return
+
+    try {
+      await releaseHold(draft.value.holdId)
+    } catch (err) {
+      console.error('releaseHold on back error:', err)
+    }
+
+    if (timerHandle) {
+      clearInterval(timerHandle)
+      timerHandle = null
+    }
+  }
+
+  router.back()
 }
 
 // เตือนก่อนออกจากหน้านี้ ถ้ายังไม่ได้แนบสลิป (จะไม่มีอะไรถูกบันทึกไว้เลยถ้าออกตอนนี้)
