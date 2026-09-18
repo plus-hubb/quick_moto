@@ -167,7 +167,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+import { useRouter } from 'vue-router'
 import AdminSidebar from '../../components/adminsidebar.vue'
 import { getCurrentAdmin, logoutAdmin } from '../../services/customerService'
 import { supabase } from '../../lib/supabase'
