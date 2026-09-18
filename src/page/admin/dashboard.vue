@@ -94,14 +94,8 @@
 
         <!-- Recent Bookings -->
         <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
-          <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+          <div class="px-5 py-4 border-b border-slate-100">
             <h2 class="text-sm font-bold text-slate-900">การจองล่าสุด</h2>
-            <RouterLink
-              to="/admin/bookings"
-              class="text-xs text-slate-500 hover:text-slate-900 transition-colors"
-            >
-              ดูทั้งหมด <i class="fa-solid fa-chevron-right text-[8px] ml-0.5"></i>
-            </RouterLink>
           </div>
 
           <div v-if="isLoading" class="text-center text-slate-400 text-sm py-10">
