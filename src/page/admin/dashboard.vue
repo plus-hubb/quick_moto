@@ -53,12 +53,12 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
             <div class="flex items-center gap-3 mb-3">
-              <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                <i class="fa-solid fa-users text-blue-500 text-sm"></i>
+              <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
+                <i class="fa-solid fa-tags text-violet-500 text-sm"></i>
               </div>
-              <p class="text-xs text-slate-500">ลูกค้าทั้งหมด</p>
+              <p class="text-xs text-slate-500">จำนวนรุ่นรถ</p>
             </div>
-            <div class="text-2xl font-bold text-slate-900">{{ stats.customers }}</div>
+            <div class="text-2xl font-bold text-slate-900">{{ stats.vehicleModels }}</div>
           </div>
 
           <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
@@ -66,7 +66,7 @@
               <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
                 <i class="fa-solid fa-motorcycle text-emerald-500 text-sm"></i>
               </div>
-              <p class="text-xs text-slate-500">รถทั้งหมด</p>
+              <p class="text-xs text-slate-500">จำนวนรถทั้งหมด</p>
             </div>
             <div class="text-2xl font-bold text-slate-900">{{ stats.vehicles }}</div>
           </div>
@@ -178,7 +178,7 @@ const isSidebarOpen = ref(false)
 const admin = ref<{ admin_id: number; name: string; email: string } | null>(null)
 
 const stats = ref({
-  customers: 0,
+  vehicleModels: 0,
   vehicles: 0,
   bookings: 0,
   pendingBookings: 0
@@ -220,17 +220,20 @@ const loadData = async () => {
   isLoading.value = true
 
   try {
-    const [customersRes, vehiclesRes, bookingsRes, pendingRes] = await Promise.all([
-      supabase.from('customer').select('customer_id', { count: 'exact', head: true }),
-      supabase.from('vehicle').select('vehicle_id', { count: 'exact', head: true }),
+    const [bookingsRes, pendingRes, allVehiclesRes] = await Promise.all([
       supabase.from('booking').select('booking_id', { count: 'exact', head: true }),
-      supabase.from('booking').select('booking_id', { count: 'exact', head: true }).eq('status', 'รออนุมัติ')
+      supabase.from('booking').select('booking_id', { count: 'exact', head: true }).eq('status', 'รออนุมัติ'),
+      supabase.from('vehicle').select('brand, model, quantity')
     ])
 
-    stats.value.customers = customersRes.count ?? 0
-    stats.value.vehicles = vehiclesRes.count ?? 0
     stats.value.bookings = bookingsRes.count ?? 0
     stats.value.pendingBookings = pendingRes.count ?? 0
+
+    if (allVehiclesRes.data) {
+      const uniqueModels = new Set(allVehiclesRes.data.map((v: any) => `${v.brand}_${v.model}`))
+      stats.value.vehicleModels = uniqueModels.size
+      stats.value.vehicles = allVehiclesRes.data.reduce((sum: number, v: any) => sum + (v.quantity || 0), 0)
+    }
 
     // ดึงการจองล่าสุด 5 รายการ
     const { data: bookings } = await supabase
