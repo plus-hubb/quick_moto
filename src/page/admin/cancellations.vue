@@ -129,7 +129,7 @@
                   <p class="text-xs text-slate-400">{{ b.customer_name }}</p>
                 </div>
                 <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-600">
-                  ยกเลิก
+                  {{ getCancelLabel(b.cancel_reason) }}
                 </span>
               </div>
               <p class="text-sm text-slate-600 mb-1">{{ b.vehicle_brand }} {{ b.vehicle_model }}</p>
@@ -176,7 +176,7 @@
             <div class="flex items-center justify-between mb-4">
               <h2 class="text-sm font-bold text-slate-900">ข้อมูลการจอง</h2>
               <span class="text-xs font-medium px-2.5 py-1 rounded-full bg-red-100 text-red-600">
-                ยกเลิก
+                {{ cancelReasonLabel }}
               </span>
             </div>
 
@@ -208,6 +208,10 @@
               <div>
                 <p class="text-xs text-slate-400 mb-0.5">มัดจำ</p>
                 <p class="font-medium text-slate-900">฿{{ formatPrice(selectedBooking.deposit_price) }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-slate-400 mb-0.5">สถานะ</p>
+                <p class="font-medium text-red-600">{{ cancelReasonLabel }}</p>
               </div>
             </div>
           </div>
@@ -286,6 +290,26 @@ const adminInitial = computed(() => {
 })
 
 const formatPrice = (price: number) => Number(price).toLocaleString('en-US')
+
+const cancelReasonLabel = computed(() => {
+  switch (selectedBooking.value?.cancel_reason) {
+    case 'customer_cancel': return 'ยกเลิกโดยลูกค้า'
+    case 'admin_reject': return 'ยกเลิกโดย Admin'
+    case 'no_show': return 'ไม่มารับรถ (Admin ยกเลิก)'
+    case 'auto_expire': return 'หมดอายุอัตโนมัติ'
+    default: return 'ไม่ทราบสาเหตุ'
+  }
+})
+
+const getCancelLabel = (reason: string | null) => {
+  switch (reason) {
+    case 'customer_cancel': return 'ลูกค้ายกเลิก'
+    case 'admin_reject': return 'Admin ยกเลิก'
+    case 'no_show': return 'ไม่มารับรถ'
+    case 'auto_expire': return 'หมดอายุ'
+    default: return 'ยกเลิก'
+  }
+}
 
 const loadData = async () => {
   isLoading.value = true
