@@ -17,7 +17,10 @@
         </button>
 
         <div class="flex-1">
-          <p class="text-sm font-medium text-slate-900">{{ isDeliveryMode ? 'ส่งมอบรถ' : 'รับคืนรถ' }}</p>
+          <p class="text-sm font-medium text-slate-900 flex items-center gap-2">
+            <i :class="isDeliveryMode ? 'fa-solid fa-truck-ramp-box' : 'fa-solid fa-box-open'" class="text-slate-400"></i>
+            {{ isDeliveryMode ? 'ส่งมอบรถ' : 'รับคืนรถ' }}
+          </p>
         </div>
 
         <div class="flex items-center gap-3 ml-auto shrink-0">

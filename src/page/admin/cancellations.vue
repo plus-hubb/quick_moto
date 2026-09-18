@@ -17,7 +17,10 @@
         </button>
 
         <div class="flex-1">
-          <p class="text-sm font-medium text-slate-900">คำขอยกเลิก</p>
+          <p class="text-sm font-medium text-slate-900 flex items-center gap-2">
+            <i class="fa-regular fa-calendar-xmark text-slate-400"></i>
+            คำขอยกเลิก
+          </p>
         </div>
 
         <div class="flex items-center gap-3 ml-auto shrink-0">

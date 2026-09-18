@@ -17,7 +17,10 @@
         </button>
 
         <div class="flex-1">
-          <p class="text-sm font-medium text-slate-900">แดชบอร์ดผู้ดูแลระบบ</p>
+          <p class="text-sm font-medium text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-gauge-high text-slate-400"></i>
+            แดชบอร์ดผู้ดูแลระบบ
+          </p>
         </div>
 
         <div class="flex items-center gap-3 ml-auto shrink-0">

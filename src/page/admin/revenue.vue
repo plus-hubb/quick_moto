@@ -17,7 +17,10 @@
         </button>
 
         <div class="flex-1">
-          <p class="text-sm font-medium text-slate-900">รายงานรายได้</p>
+          <p class="text-sm font-medium text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-chart-line text-slate-400"></i>
+            รายงานรายได้
+          </p>
         </div>
 
         <div class="flex items-center gap-3 ml-auto shrink-0">
@@ -71,7 +74,7 @@
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
               <div class="flex items-center gap-3 mb-3">
                 <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <i class="fa-solid fa-banknote text-emerald-500 text-sm"></i>
+                  <i class="fa-solid fa-money-bill text-emerald-500 text-sm"></i>
                 </div>
                 <p class="text-xs text-slate-500">ค่าเช่าที่ได้</p>
               </div>

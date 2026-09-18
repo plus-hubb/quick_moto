@@ -17,7 +17,10 @@
         </button>
 
         <div class="flex-1">
-          <p class="text-sm font-medium text-slate-900">ประวัติการเช่า</p>
+          <p class="text-sm font-medium text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-clock-rotate-left text-slate-400"></i>
+            ประวัติการเช่า
+          </p>
         </div>
 
         <div class="flex items-center gap-3 ml-auto shrink-0">
