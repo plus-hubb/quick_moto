@@ -259,29 +259,43 @@
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">
                   เลขไมล์ (km)
                 </label>
+                <p v-if="!isDeliveryMode && selectedBooking?.mileage_delivery != null" class="text-xs text-slate-400 mb-1">
+                  เลขไมล์ตอนส่งมอบ: <span class="font-medium text-slate-600">{{ selectedBooking.mileage_delivery.toLocaleString() }} km</span>
+                </p>
                 <input
                   v-model.number="mileage"
                   type="number"
                   min="0"
                   placeholder="กรอกเลขไมล์ปัจจุบัน"
-                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+                  class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all"
+                  :class="isMileageInvalid ? 'border-red-400 focus:ring-red-500' : 'border-slate-200 focus:ring-slate-800'"
                 />
+                <p v-if="isMileageInvalid" class="text-xs text-red-500 mt-1">
+                  เลขไมล์ต้องไม่น้อยกว่าตอนส่งมอบ ({{ selectedBooking?.mileage_delivery?.toLocaleString() }} km)
+                </p>
               </div>
 
-              <!-- หมวกกันน็อค -->
-              <div class="flex items-center gap-3">
-                <button
-                  type="button"
-                  @click="helmet = !helmet"
-                  class="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors shrink-0"
-                  :class="helmet ? 'bg-[#051329] border-[#051329]' : 'border-slate-300 bg-white'"
-                >
-                  <i v-if="helmet" class="fa-solid fa-check text-white text-[10px]"></i>
-                </button>
-                <span class="text-sm text-slate-700">
-                  {{ isDeliveryMode ? 'ลูกค้ารับหมวกกันน็อค' : 'ได้หมวกกันน็อคคืน' }}
-                </span>
-              </div>
+              <!-- หมวกกันน็อค (เฉพาะตอนส่งมอบ หรือตอนรับคืนที่ตอนส่งให้หมวก) -->
+              <template v-if="isDeliveryMode || selectedBooking?.helmet_delivery">
+                <div class="flex items-center gap-3">
+                  <button
+                    type="button"
+                    @click="helmet = !helmet"
+                    class="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors shrink-0"
+                    :class="helmet ? 'bg-[#051329] border-[#051329]' : 'border-slate-300 bg-white'"
+                  >
+                    <i v-if="helmet" class="fa-solid fa-check text-white text-[10px]"></i>
+                  </button>
+                  <span class="text-sm text-slate-700">
+                    {{ isDeliveryMode ? 'ลูกค้ารับหมวกกันน็อค' : 'ได้หมวกกันน็อคคืน' }}
+                  </span>
+                </div>
+              </template>
+              <template v-else-if="!isDeliveryMode">
+                <div class="flex items-center gap-3">
+                  <span class="text-sm text-slate-400 italic">ไม่ได้ให้หมวกกันน็อคตอนส่งมอบ ไม่ต้องเช็ค</span>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -379,7 +393,7 @@
           <button
             type="button"
             @click="handleSubmit"
-            :disabled="isSubmitting || !mileage"
+            :disabled="isSubmitting || !mileage || isMileageInvalid"
             class="w-full bg-[#051329] hover:bg-[#0a1f3d] disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
           >
             <template v-if="isSubmitting">
@@ -424,7 +438,7 @@ const isLoading = ref(false)
 const isSubmitting = ref(false)
 
 const bookings = ref<BookingWithDetails[]>([])
-const selectedBooking = ref<BookingWithDetails & { delivery_return_id?: number } | null>(null)
+const selectedBooking = ref<BookingWithDetails & { delivery_return_id?: number; helmet_delivery?: boolean; mileage_delivery?: number | null } | null>(null)
 
 const photos = ref<(string | null)[]>([null, null, null])
 const photoFiles = ref<(File | null)>(null)
@@ -439,6 +453,12 @@ const missingItem = ref(false)
 const missingItemFee = ref<number>(0)
 
 const totalPenalty = computed(() => damageFee.value + lateFee.value + missingItemFee.value)
+
+const isMileageInvalid = computed(() => {
+  if (isDeliveryMode.value) return false
+  if (!mileage.value || !selectedBooking.value?.mileage_delivery) return false
+  return mileage.value < selectedBooking.value.mileage_delivery
+})
 
 const isDeliveryMode = computed(() => route.path === '/admin/delivery')
 
@@ -504,7 +524,7 @@ const loadData = async () => {
   }
 }
 
-const selectBooking = (b: BookingWithDetails) => {
+const selectBooking = (b: BookingWithDetails & { delivery_return_id?: number; helmet_delivery?: boolean }) => {
   selectedBooking.value = b
   photos.value = [null, null, null]
   mileage.value = null
@@ -536,6 +556,7 @@ const onPhotoCapture = (event: Event, index: number) => {
 
 const handleSubmit = async () => {
   if (!selectedBooking.value || !mileage.value || isSubmitting.value) return
+  if (isMileageInvalid.value) return
 
   const confirmed = window.confirm(
     isDeliveryMode.value
@@ -572,6 +593,7 @@ const handleSubmit = async () => {
       })
       alert('บันทึกการส่งมอบสำเร็จ!')
     } else {
+      const helmetReturn = selectedBooking.value.helmet_delivery ? helmet.value : false
       await saveReturn({
         deliveryReturnId: selectedBooking.value.delivery_return_id!,
         bookingId: selectedBooking.value.booking_id,
@@ -579,7 +601,7 @@ const handleSubmit = async () => {
         image2: imageUrls[1],
         image3: imageUrls[2],
         mileage: mileage.value,
-        helmet: helmet.value
+        helmet: helmetReturn
       })
 
       if (damage.value || lateReturn.value || missingItem.value) {

@@ -185,10 +185,10 @@ export async function getPendingDeliveries(): Promise<BookingWithDetails[]> {
 /**
  * ดึงรายการที่ส่งมอบแล้วแต่ยังไม่ได้รับคืน (รอรับคืน)
  */
-export async function getPendingReturns(): Promise<(BookingWithDetails & { delivery_return_id: number })[]> {
+export async function getPendingReturns(): Promise<(BookingWithDetails & { delivery_return_id: number; helmet_delivery: boolean; mileage_delivery: number | null })[]> {
   const { data: dr, error } = await supabase
     .from('delivery_return')
-    .select('delivery_return_id, booking_id')
+    .select('delivery_return_id, booking_id, helmet_delivery, mileage_delivery')
     .is('return_date', null)
 
   if (error) {
@@ -225,9 +225,14 @@ export async function getPendingReturns(): Promise<(BookingWithDetails & { deliv
   const customerMap = new Map((customersRes.data ?? []).map(c => [c.customer_id, c]))
   const vehicleMap = new Map((vehiclesRes.data ?? []).map(v => [v.vehicle_id, v]))
 
+  const helmetDeliveryMap = new Map(dr.map(d => [d.booking_id, d.helmet_delivery]))
+  const mileageDeliveryMap = new Map(dr.map(d => [d.booking_id, d.mileage_delivery]))
+
   return bookings.map(b => ({
     ...b,
     delivery_return_id: drMap.get(b.booking_id)!,
+    helmet_delivery: helmetDeliveryMap.get(b.booking_id) ?? false,
+    mileage_delivery: mileageDeliveryMap.get(b.booking_id) ?? null,
     customer_name: customerMap.get(b.customer_id)?.name ?? '-',
     customer_phone: customerMap.get(b.customer_id)?.phone ?? '-',
     vehicle_brand: vehicleMap.get(b.vehicle_id)?.brand ?? '-',
