@@ -132,16 +132,6 @@
           </button>
         </form>
 
-        <!-- Forgot Password -->
-        <div class="text-center mt-5">
-          <button
-            type="button"
-            @click="handleForgotPassword"
-            class="text-sm text-slate-500 hover:text-slate-900 hover:underline transition-colors"
-          >
-            ลืมรหัสผ่าน?
-          </button>
-        </div>
       </main>
 
       <!-- Signup -->
@@ -165,8 +155,7 @@ import { useRouter, RouterLink } from 'vue-router'
 
 import {
   loginCustomer,
-  loginAdmin,
-  resetCustomerPassword
+  loginAdmin
 } from '../services/customerService'
 
 const router = useRouter()
@@ -299,44 +288,6 @@ const handleSubmit = async () => {
   }
 }
 
-// ==============================
-// Forgot Password
-// ==============================
-
-const handleForgotPassword = async () => {
-
-  if (!form.email.trim()) {
-    alert('กรุณากรอกอีเมลก่อน')
-    return
-  }
-
-  try {
-
-    await resetCustomerPassword(
-      form.email
-    )
-
-    alert(
-      'ส่งลิงก์เปลี่ยนรหัสผ่านไปยังอีเมลแล้ว'
-    )
-
-  } catch (error) {
-
-    console.error(
-      'RESET PASSWORD ERROR:',
-      error
-    )
-
-    const message =
-      error instanceof Error
-        ? error.message
-        : String(error)
-
-    alert(
-      `ไม่สามารถส่งอีเมลได้\n\n${message}`
-    )
-  }
-}
 </script>
 
 <style>
