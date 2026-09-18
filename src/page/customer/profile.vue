@@ -21,16 +21,9 @@
 
       <!-- Profile Image -->
       <div class="flex flex-col items-center pt-2 mb-6">
-        <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden">
-          <i class="fa-solid fa-user text-3xl sm:text-4xl text-slate-300"></i>
-          <button
-            type="button"
-            class="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-[#051329] text-white flex items-center justify-center border-2 border-white"
-          >
-            <i class="fa-solid fa-camera text-xs"></i>
-          </button>
+        <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-[#051329] text-white flex items-center justify-center shadow-sm overflow-hidden">
+          <span class="text-3xl sm:text-4xl font-bold">{{ customerInitial }}</span>
         </div>
-        <p class="text-xs text-slate-400 mt-2">เปลี่ยนรูปโปรไฟล์</p>
       </div>
 
       <!-- Name -->
@@ -271,7 +264,7 @@
 
 <script setup lang="ts">
 
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import BottomNavigation from '../../components/BottomNavigation.vue'
 
@@ -300,6 +293,10 @@ interface Customer {
 
 const customer = ref<Customer | null>(null)
 const isLoading = ref(true)
+
+const customerInitial = computed(() => {
+  return customer.value?.name?.charAt(0)?.toUpperCase() ?? '?'
+})
 
 
 // ==============================
