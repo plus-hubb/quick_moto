@@ -44,9 +44,20 @@
           </p>
 
           <!-- Header -->
-          <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div class="flex items-center justify-between mb-4 flex-wrap gap-3">
             <h1 class="text-xl sm:text-2xl font-bold text-slate-900">รายการที่ยกเลิก</h1>
-            <span v-if="bookings.length > 0" class="text-xs text-slate-400">{{ bookings.length }} รายการ</span>
+            <span v-if="filteredBookings.length > 0" class="text-xs text-slate-400">{{ filteredBookings.length }} รายการ</span>
+          </div>
+
+          <!-- Search -->
+          <div class="relative mb-5">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input
+              v-model="searchKeyword"
+              type="text"
+              placeholder="ค้นหาด้วยรหัสจอง ชื่อลูกค้า หรือรุ่นรถ..."
+              class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+            />
           </div>
 
           <!-- Loading -->
@@ -55,12 +66,12 @@
           </div>
 
           <!-- Empty -->
-          <div v-else-if="bookings.length === 0" class="text-center text-slate-400 text-sm py-16 bg-white rounded-2xl border border-slate-100">
-            ไม่มีรายการที่ยกเลิก
+          <div v-else-if="filteredBookings.length === 0" class="text-center text-slate-400 text-sm py-16 bg-white rounded-2xl border border-slate-100">
+            {{ searchKeyword ? 'ไม่พบรายการที่ค้นหา' : 'ไม่มีรายการที่ยกเลิก' }}
           </div>
 
           <!-- Desktop Table -->
-          <div v-else class="hidden md:block bg-white rounded-2xl border border-slate-100 overflow-hidden">
+          <div v-if="filteredBookings.length > 0" class="hidden md:block bg-white rounded-2xl border border-slate-100 overflow-hidden">
             <table class="w-full text-sm">
               <thead>
                 <tr class="bg-slate-50 text-slate-500 text-xs">
@@ -74,7 +85,7 @@
               </thead>
               <tbody>
                 <tr
-                  v-for="b in bookings"
+                  v-for="b in filteredBookings"
                   :key="b.booking_id"
                   class="border-t border-slate-100 hover:bg-slate-50/60"
                 >
@@ -103,9 +114,9 @@
           </div>
 
           <!-- Mobile Cards -->
-          <div v-if="!isLoading && bookings.length > 0" class="md:hidden space-y-3">
+          <div v-if="!isLoading && filteredBookings.length > 0" class="md:hidden space-y-3">
             <div
-              v-for="b in bookings"
+              v-for="b in filteredBookings"
               :key="b.booking_id"
               class="bg-white rounded-2xl border border-slate-100 p-4"
             >
@@ -256,6 +267,16 @@ const isLoading = ref(false)
 const bookings = ref<(BookingWithDetails & { payment_slip: string | null })[]>([])
 const selectedBooking = ref<(BookingWithDetails & { payment_slip: string | null }) | null>(null)
 const slipImageError = ref(false)
+const searchKeyword = ref('')
+
+const filteredBookings = computed(() => {
+  const keyword = searchKeyword.value.trim().toLowerCase()
+  if (!keyword) return bookings.value
+  return bookings.value.filter((b) => {
+    const haystack = `${b.booking_code} ${b.customer_name} ${b.vehicle_brand} ${b.vehicle_model}`.toLowerCase()
+    return haystack.includes(keyword)
+  })
+})
 
 const adminInitial = computed(() => {
   return admin.value?.name?.charAt(0)?.toUpperCase() ?? 'A'
