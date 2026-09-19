@@ -25,7 +25,7 @@
 
       <!-- Vehicle Image + Info -->
       <div class="pt-5">
-        <div class="w-full h-48 sm:h-64 bg-slate-200 rounded-2xl overflow-hidden">
+        <div class="w-full h-56 sm:h-72 bg-slate-200 rounded-2xl overflow-hidden">
           <img
             v-if="vehicle.image"
             :src="vehicle.image"

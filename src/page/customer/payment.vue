@@ -67,15 +67,26 @@
           @change="handleFileSelected"
         >
 
+        <!-- สลิปที่อัพโหลดแล้ว -->
+        <div v-if="slipUploaded && slipUrl" class="mb-4">
+          <p class="text-sm font-medium text-slate-700 mb-2">สลิปที่แนบไว้</p>
+          <img
+            :src="slipUrl"
+            alt="สลิปการชำระเงิน"
+            class="w-full max-w-xs mx-auto rounded-xl border border-slate-200 shadow-sm"
+          >
+          <p class="text-xs text-slate-400 mt-2">สามารถกดปุ่มด้านล่างเพื่ออัพโหลดสลิปใหม่ได้</p>
+        </div>
+
         <div class="space-y-3">
           <button
             type="button"
             @click="fileInputRef?.click()"
-            :disabled="isUploading || slipUploaded"
+            :disabled="isUploading"
             class="w-full bg-[#051329] hover:bg-[#0a1f3d] disabled:opacity-50 text-white font-medium py-3 px-4 rounded-xl shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
           >
             <i class="fa-solid fa-upload"></i>
-            <span>{{ isUploading ? 'กำลังบันทึกการจอง...' : slipUploaded ? 'แนบสลิปแล้ว' : 'อัพโหลดสลิป' }}</span>
+            <span>{{ isUploading ? 'กำลังบันทึก...' : slipUploaded ? 'อัพโหลดสลิปใหม่' : 'อัพโหลดสลิป' }}</span>
           </button>
 
           <button
@@ -96,7 +107,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
-import { confirmBooking, createPayment, releaseHold, calcRentalDays } from '../../services/bookingService'
+import { confirmBooking, createPayment, updatePaymentSlip, releaseHold, calcRentalDays } from '../../services/bookingService'
+import { getPaymentByBookingId } from '../../services/deliveryReturnService'
 import { supabase } from '../../lib/supabase'
 
 const route = useRoute()
@@ -118,6 +130,7 @@ const errorMessage = ref('')
 
 const slipUploaded = ref(false)
 const isUploading = ref(false)
+const slipUrl = ref<string | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
 
 // booking_id / booking_code จะมีค่าก็ต่อเมื่อ insert booking สำเร็จแล้วเท่านั้น (หลังแนบสลิป)
@@ -182,41 +195,63 @@ const handleFileSelected = async (event: Event) => {
   isUploading.value = true
 
   try {
-    // 1) แปลง hold เป็น booking จริง (status = รออนุมัติ)
-    const booking = await confirmBooking({
-      holdId: draft.value.holdId,
-      customerId: draft.value.customerId,
-      vehicleId: draft.value.vehicleId,
-      quantity: draft.value.quantity,
-      pickupDate: draft.value.pickupDate,
-      returnDate: draft.value.returnDate,
-      rentalPrice: draft.value.rentalPrice
-    })
-    createdBookingId.value = booking.booking_id
-    createdBookingCode.value = booking.booking_code
+    if (slipUploaded.value && createdBookingId.value && createdBookingCode.value) {
+      // อัพโหลดสลิปใหม่ (แทนที่สลิปเดิม)
+      const filePath = `payment/${createdBookingCode.value}-${Date.now()}-${file.name}`
+      const { error: uploadError } = await supabase.storage
+        .from('qrick_moto_img')
+        .upload(filePath, file)
 
-    // 2) อัพโหลดไฟล์สลิปขึ้น Supabase Storage (bucket เดียวกับรูปรถ เก็บในโฟลเดอร์ payment/)
-    const filePath = `payment/${booking.booking_code}-${Date.now()}-${file.name}`
-    const { error: uploadError } = await supabase.storage
-      .from('qrick_moto_img')
-      .upload(filePath, file)
+      if (uploadError) throw uploadError
 
-    if (uploadError) throw uploadError
+      const { data: publicUrlData } = supabase.storage
+        .from('qrick_moto_img')
+        .getPublicUrl(filePath)
 
-    const { data: publicUrlData } = supabase.storage
-      .from('qrick_moto_img')
-      .getPublicUrl(filePath)
+      await updatePaymentSlip({
+        bookingId: createdBookingId.value,
+        slipUrl: publicUrlData.publicUrl
+      })
 
-    // 3) บันทึกสลิปลงตาราง payment
-    await createPayment({
-      bookingId: booking.booking_id,
-      slipUrl: publicUrlData.publicUrl
-    })
+      slipUrl.value = publicUrlData.publicUrl
+    } else {
+      // ครั้งแรก — สร้าง booking ใหม่
+      const booking = await confirmBooking({
+        holdId: draft.value.holdId,
+        customerId: draft.value.customerId,
+        vehicleId: draft.value.vehicleId,
+        quantity: draft.value.quantity,
+        pickupDate: draft.value.pickupDate,
+        returnDate: draft.value.returnDate,
+        rentalPrice: draft.value.rentalPrice
+      })
+      createdBookingId.value = booking.booking_id
+      createdBookingCode.value = booking.booking_code
 
-    if (timerHandle) {
-      clearInterval(timerHandle)
-      timerHandle = null
+      const filePath = `payment/${booking.booking_code}-${Date.now()}-${file.name}`
+      const { error: uploadError } = await supabase.storage
+        .from('qrick_moto_img')
+        .upload(filePath, file)
+
+      if (uploadError) throw uploadError
+
+      const { data: publicUrlData } = supabase.storage
+        .from('qrick_moto_img')
+        .getPublicUrl(filePath)
+
+      await createPayment({
+        bookingId: booking.booking_id,
+        slipUrl: publicUrlData.publicUrl
+      })
+
+      slipUrl.value = publicUrlData.publicUrl
+
+      if (timerHandle) {
+        clearInterval(timerHandle)
+        timerHandle = null
+      }
     }
+
     slipUploaded.value = true
   } catch (err) {
     console.error('confirm booking / upload slip error:', err)
@@ -224,6 +259,7 @@ const handleFileSelected = async (event: Event) => {
     alert(message)
   } finally {
     isUploading.value = false
+    if (fileInputRef.value) fileInputRef.value.value = ''
   }
 }
 
@@ -295,7 +331,7 @@ onBeforeRouteLeave(async (_to, _from, next) => {
   next()
 })
 
-onMounted(() => {
+onMounted(async () => {
   window.addEventListener('beforeunload', handleBeforeUnload)
 
   const q = route.query
@@ -323,7 +359,43 @@ onMounted(() => {
     rentalPrice: Number(q.rentalPrice)
   }
 
-  startCountdown()
+  // เช็คว่ามี booking ที่สร้างไว้แล้วหรือยัง (กรณี refresh หน้า)
+  try {
+    const { data: existingBooking } = await supabase
+      .from('booking')
+      .select('booking_id, booking_code')
+      .eq('customer_id', draft.value.customerId)
+      .eq('vehicle_id', draft.value.vehicleId)
+      .eq('pickup_date', draft.value.pickupDate)
+      .eq('return_date', draft.value.returnDate)
+      .neq('status', 'ยกเลิก')
+      .order('booking_id', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existingBooking) {
+      // มี booking อยู่แล้ว -> โหลดสลิปเดิมมาแสดง
+      createdBookingId.value = existingBooking.booking_id
+      createdBookingCode.value = existingBooking.booking_code
+
+      const payment = await getPaymentByBookingId(existingBooking.booking_id)
+      if (payment && payment.payment_slip) {
+        slipUrl.value = payment.payment_slip
+        slipUploaded.value = true
+        if (timerHandle) {
+          clearInterval(timerHandle)
+          timerHandle = null
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error checking existing booking:', err)
+  }
+
+  // เริ่ม countdown เฉพาะตอนที่ยังไม่ได้แนบสลิป
+  if (!slipUploaded.value) {
+    startCountdown()
+  }
 })
 
 onUnmounted(() => {

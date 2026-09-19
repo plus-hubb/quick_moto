@@ -420,3 +420,26 @@ export async function createPayment(input: {
 
   return data
 }
+
+export async function updatePaymentSlip(input: {
+  bookingId: number
+  slipUrl: string
+}): Promise<Payment> {
+  const { data, error } = await supabase
+    .from('payment')
+    .update({ payment_slip: input.slipUrl, payment_datetime: new Date().toISOString() })
+    .eq('booking_id', input.bookingId)
+    .select('*')
+
+  if (error) {
+    console.error('updatePaymentSlip error:', error.message)
+    throw error
+  }
+
+  if (!data || data.length === 0) {
+    // ไม่มี row ที่ update ได้ — ลอง insert ใหม่แทน
+    return createPayment({ bookingId: input.bookingId, slipUrl: input.slipUrl })
+  }
+
+  return data[0]
+}

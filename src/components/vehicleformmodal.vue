@@ -85,15 +85,31 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1.5">ลิงก์รูปภาพ</label>
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">รูปภาพรถ</label>
           <input
-            v-model="form.image"
-            type="text"
-            placeholder="https://..."
-            class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
+            ref="fileInputRef"
+            type="file"
+            accept="image/*"
+            class="hidden"
+            @change="handleFileSelected"
           >
-          <div v-if="form.image" class="w-full h-32 mt-2 rounded-xl overflow-hidden bg-slate-100">
-            <img :src="form.image" class="w-full h-full object-cover" @error="imageError = true">
+          <button
+            type="button"
+            @click="fileInputRef?.click()"
+            class="w-full px-3 py-2.5 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-sm text-slate-500 hover:bg-slate-100 hover:border-slate-400 transition-all flex items-center justify-center gap-2"
+          >
+            <i class="fa-solid fa-cloud-arrow-up text-base"></i>
+            {{ imagePreview ? 'เปลี่ยนรูปภาพ' : 'เลือกรูปภาพจากเครื่อง' }}
+          </button>
+          <div v-if="imagePreview" class="w-full h-32 mt-2 rounded-xl overflow-hidden bg-slate-100 relative group">
+            <img :src="imagePreview" class="w-full h-full object-cover">
+            <button
+              type="button"
+              @click="removeImage"
+              class="absolute top-1.5 right-1.5 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+            >
+              <i class="fa-solid fa-xmark"></i>
+            </button>
           </div>
         </div>
 
@@ -135,6 +151,7 @@
 import { ref, reactive } from 'vue'
 import { createVehicle, updateVehicle, type VehicleFormData } from '../services/adminvehicleservice'
 import type { Vehicle } from '../services/customerService'
+import { supabase } from '../lib/supabase'
 
 const props = defineProps<{
   mode: 'create' | 'edit'
@@ -148,7 +165,9 @@ const emit = defineEmits<{
 
 const isSubmitting = ref(false)
 const errorMessage = ref('')
-const imageError = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+const selectedFile = ref<File | null>(null)
+const imagePreview = ref<string | null>(props.vehicle?.image ?? null)
 
 const form = reactive<VehicleFormData>({
   brand: props.vehicle?.brand ?? '',
@@ -161,11 +180,58 @@ const form = reactive<VehicleFormData>({
   quantity: props.vehicle?.quantity ?? 1
 })
 
+function extractStoragePath(url: string): string | null {
+  const marker = '/object/public/qrick_moto_img/'
+  const idx = url.indexOf(marker)
+  if (idx === -1) return null
+  return url.substring(idx + marker.length)
+}
+
+const handleFileSelected = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  selectedFile.value = file
+  imagePreview.value = URL.createObjectURL(file)
+  if (fileInputRef.value) fileInputRef.value.value = ''
+}
+
+const removeImage = () => {
+  selectedFile.value = null
+  imagePreview.value = null
+  form.image = ''
+}
+
 const handleSubmit = async () => {
   errorMessage.value = ''
   isSubmitting.value = true
 
   try {
+    // อัพโหลดรูปใหม่ถ้ามีไฟล์ที่เลือก
+    if (selectedFile.value) {
+      const filePath = `vehicle/${Date.now()}-${selectedFile.value.name}`
+      const { error: uploadError } = await supabase.storage
+        .from('qrick_moto_img')
+        .upload(filePath, selectedFile.value)
+
+      if (uploadError) throw new Error('อัพโหลดรูปภาพไม่สำเร็จ: ' + uploadError.message)
+
+      const { data: urlData } = supabase.storage
+        .from('qrick_moto_img')
+        .getPublicUrl(filePath)
+
+      form.image = urlData.publicUrl
+
+      // ลบรูปเก่าจาก storage ถ้าแก้ไขรถ
+      if (props.mode === 'edit' && props.vehicle?.image) {
+        const oldPath = extractStoragePath(props.vehicle.image)
+        if (oldPath) {
+          await supabase.storage.from('qrick_moto_img').remove([oldPath])
+        }
+      }
+    }
+
     if (props.mode === 'create') {
       await createVehicle(form)
     } else if (props.vehicle) {

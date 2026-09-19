@@ -399,7 +399,7 @@ export async function getCancelledBookings(): Promise<(BookingWithDetails & { pa
   const [customersRes, vehiclesRes, paymentsRes] = await Promise.all([
     supabase.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
     supabase.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds),
-    supabase.from('payment').select('booking_id, payment_slip').in('booking_id', bookingIds)
+    supabase.from('payment').select('booking_id, payment_slip').in('booking_id', bookingIds).order('payment_id', { ascending: true })
   ])
 
   if (paymentsRes.error) {
@@ -433,6 +433,7 @@ export async function getPaymentByBookingId(bookingId: number): Promise<{ paymen
     .from('payment')
     .select('payment_slip')
     .eq('booking_id', bookingId)
+    .order('payment_id', { ascending: false })
     .limit(1)
     .maybeSingle()
 
@@ -480,7 +481,7 @@ export async function getCompletedBookings(): Promise<CompletedBooking[]> {
     supabase.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds),
     supabase.from('delivery_return').select('*').in('booking_id', bookingIds),
     supabase.from('penalty').select('*').in('booking_id', bookingIds),
-    supabase.from('payment').select('booking_id, payment_slip').in('booking_id', bookingIds)
+    supabase.from('payment').select('booking_id, payment_slip').in('booking_id', bookingIds).order('payment_id', { ascending: true })
   ])
 
   const customerMap = new Map((customersRes.data ?? []).map(c => [c.customer_id, c]))

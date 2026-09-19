@@ -65,7 +65,7 @@
 
       <!-- Vehicle Card -->
       <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-6">
-        <div class="w-full h-40 sm:h-48 bg-slate-200 rounded-xl overflow-hidden mb-4">
+        <div class="w-full h-52 sm:h-64 bg-slate-200 rounded-xl overflow-hidden mb-4">
           <img
             v-if="booking.vehicle?.image"
             :src="booking.vehicle.image"

@@ -5,7 +5,7 @@
   >
 
     <!-- Image -->
-    <div class="w-full h-40 sm:h-48 bg-slate-200 overflow-hidden">
+    <div class="w-full h-52 sm:h-64 bg-slate-200 overflow-hidden">
       <img
         v-if="vehicle.image"
         :src="vehicle.image"
