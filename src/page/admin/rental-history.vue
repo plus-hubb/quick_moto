@@ -197,6 +197,10 @@
                 <p class="text-xs text-slate-400 mb-0.5">รถที่จอง</p>
                 <p class="font-medium text-slate-900">{{ selectedBooking.vehicle_brand }} {{ selectedBooking.vehicle_model }}</p>
               </div>
+              <div v-if="selectedBooking.license_plate">
+                <p class="text-xs text-slate-400 mb-0.5">เลขทะเบียน</p>
+                <p class="font-medium text-slate-900">{{ selectedBooking.license_plate }}</p>
+              </div>
               <div>
                 <p class="text-xs text-slate-400 mb-0.5">วันรับรถ</p>
                 <p class="font-medium text-slate-900">{{ selectedBooking.pickup_date }}</p>
@@ -332,28 +336,37 @@
             <h2 class="text-sm font-bold text-slate-900 mb-3">ค่าปรับ</h2>
 
             <div class="space-y-3">
-              <div v-if="selectedBooking.penalty.damage" class="flex items-center justify-between text-sm">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
-                  <span class="text-slate-700">มีความเสียหาย</span>
+              <div v-if="selectedBooking.penalty.damage" class="text-sm">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-red-500 shrink-0"></span>
+                    <span class="text-slate-700">มีความเสียหาย</span>
+                  </div>
+                  <span class="font-medium text-slate-900">฿{{ formatPrice(selectedBooking.penalty.damage_fee) }}</span>
                 </div>
-                <span class="font-medium text-slate-900">฿{{ formatPrice(selectedBooking.penalty.damage_fee) }}</span>
+                <p v-if="selectedBooking.penalty.damage_note" class="text-xs text-slate-400 ml-4 mt-1">{{ selectedBooking.penalty.damage_note }}</p>
               </div>
 
-              <div v-if="selectedBooking.penalty.late_return" class="flex items-center justify-between text-sm">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
-                  <span class="text-slate-700">คืนรถล่าช้า</span>
+              <div v-if="selectedBooking.penalty.late_return" class="text-sm">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                    <span class="text-slate-700">คืนรถล่าช้า</span>
+                  </div>
+                  <span class="font-medium text-slate-900">฿{{ formatPrice(selectedBooking.penalty.late_fee) }}</span>
                 </div>
-                <span class="font-medium text-slate-900">฿{{ formatPrice(selectedBooking.penalty.late_fee) }}</span>
+                <p v-if="selectedBooking.penalty.late_note" class="text-xs text-slate-400 ml-4 mt-1">{{ selectedBooking.penalty.late_note }}</p>
               </div>
 
-              <div v-if="selectedBooking.penalty.missing_item" class="flex items-center justify-between text-sm">
-                <div class="flex items-center gap-2">
-                  <span class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
-                  <span class="text-slate-700">อุปกรณ์หาย / ไม่ครบ</span>
+              <div v-if="selectedBooking.penalty.missing_item" class="text-sm">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-orange-500 shrink-0"></span>
+                    <span class="text-slate-700">อุปกรณ์หาย / ไม่ครบ</span>
+                  </div>
+                  <span class="font-medium text-slate-900">฿{{ formatPrice(selectedBooking.penalty.missing_item_fee) }}</span>
                 </div>
-                <span class="font-medium text-slate-900">฿{{ formatPrice(selectedBooking.penalty.missing_item_fee) }}</span>
+                <p v-if="selectedBooking.penalty.missing_item_note" class="text-xs text-slate-400 ml-4 mt-1">{{ selectedBooking.penalty.missing_item_note }}</p>
               </div>
 
               <div class="bg-red-50 rounded-xl p-3 flex items-center justify-between">

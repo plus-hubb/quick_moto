@@ -35,6 +35,7 @@ export interface BookingWithDetails {
   booking_date: string
   cancel_reason: string | null
   cancel_note: string | null
+  license_plate: string | null
   customer_name: string
   customer_phone: string
   vehicle_brand: string
@@ -52,7 +53,7 @@ export interface BookingWithDetails {
 export async function getPendingApprovals(): Promise<BookingWithDetails[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, license_plate')
     .eq('status', 'รออนุมัติ')
     .order('booking_date', { ascending: false })
 
@@ -139,7 +140,7 @@ export async function cancelNoShowBooking(bookingId: number, cancelNote?: string
 export async function getPendingDeliveries(): Promise<BookingWithDetails[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, license_plate')
     .eq('status', 'อนุมัติแล้ว')
     .order('pickup_date', { ascending: false })
 
@@ -204,7 +205,7 @@ export async function getPendingReturns(): Promise<(BookingWithDetails & { deliv
 
   const { data: bookings, error: bookingError } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, license_plate')
     .in('booking_id', bookingIds)
     .eq('status', 'กำลังเช่า')
 
@@ -259,6 +260,7 @@ export async function saveDelivery(input: {
   image3: string | null
   mileage: number
   helmet: boolean
+  licensePlate: string
 }): Promise<DeliveryReturn> {
   const now = new Date()
   const dateStr = now.toISOString().split('T')[0]
@@ -288,10 +290,10 @@ export async function saveDelivery(input: {
     throw error
   }
 
-  // อัปเดตสถานะ booking เป็น "กำลังเช่า"
+  // อัปเดตสถานะ booking เป็น "กำลังเช่า" พร้อมเลขทะเบียน
   const { error: statusError } = await supabase
     .from('booking')
-    .update({ status: 'กำลังเช่า' })
+    .update({ status: 'กำลังเช่า', license_plate: input.licensePlate })
     .eq('booking_id', input.bookingId)
 
   if (statusError) {
@@ -388,7 +390,7 @@ export async function uploadImage(file: File): Promise<string> {
 export async function getCancelledBookings(): Promise<(BookingWithDetails & { payment_slip: string | null })[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate')
     .eq('status', 'ยกเลิก')
     .order('booking_date', { ascending: false })
 
@@ -468,7 +470,7 @@ export interface CompletedBooking extends BookingWithDetails {
 export async function getCompletedBookings(): Promise<CompletedBooking[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, license_plate')
     .eq('status', 'เสร็จสิ้น')
     .order('return_date', { ascending: false })
 
@@ -519,10 +521,13 @@ export interface Penalty {
   booking_id: number
   damage: boolean
   damage_fee: number
+  damage_note: string | null
   late_return: boolean
   late_fee: number
+  late_note: string | null
   missing_item: boolean
   missing_item_fee: number
+  missing_item_note: string | null
   total_penalty: number
 }
 
@@ -533,10 +538,13 @@ export async function savePenalty(input: {
   bookingId: number
   damage: boolean
   damageFee: number
+  damageNote?: string
   lateReturn: boolean
   lateFee: number
+  lateNote?: string
   missingItem: boolean
   missingItemFee: number
+  missingItemNote?: string
 }): Promise<Penalty> {
   const totalPenalty = input.damageFee + input.lateFee + input.missingItemFee
 
@@ -546,10 +554,13 @@ export async function savePenalty(input: {
       booking_id: input.bookingId,
       damage: input.damage,
       damage_fee: input.damageFee,
+      damage_note: input.damageNote || null,
       late_return: input.lateReturn,
       late_fee: input.lateFee,
+      late_note: input.lateNote || null,
       missing_item: input.missingItem,
       missing_item_fee: input.missingItemFee,
+      missing_item_note: input.missingItemNote || null,
       total_penalty: totalPenalty
     })
     .select('*')

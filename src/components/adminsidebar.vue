@@ -12,7 +12,7 @@
   >
     <!-- Logo -->
     <div class="px-5 py-6 border-b border-white/10">
-      <h1 class="text-lg font-bold">Azure Motion</h1>
+      <h1 class="text-lg font-bold">Quick Moto</h1>
       <p class="text-xs text-white/50 mt-0.5">การจัดการรถเช่า</p>
     </div>
 

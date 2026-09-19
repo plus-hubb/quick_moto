@@ -22,6 +22,7 @@ export interface Booking {
   status: string
   cancel_reason: string | null
   cancel_note: string | null
+  license_plate: string | null
 }
 
 export interface Payment {
@@ -194,7 +195,7 @@ export async function createHold(input: {
     throw new Error('ขออภัย รถไม่พร้อมสำหรับช่วงวันที่นี้แล้ว มีคนอื่นจองไปก่อน กรุณาเลือกวันที่อื่น')
   }
 
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString()
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString()
 
   const { data, error } = await supabase
     .from('booking_hold')

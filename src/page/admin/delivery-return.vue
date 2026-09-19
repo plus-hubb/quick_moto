@@ -219,6 +219,10 @@
                 <p class="text-xs text-slate-400">วันคืน</p>
                 <p class="font-medium text-slate-900">{{ selectedBooking.return_date }}</p>
               </div>
+              <div v-if="selectedBooking.license_plate">
+                <p class="text-xs text-slate-400">เลขทะเบียน</p>
+                <p class="font-medium text-slate-900">{{ selectedBooking.license_plate }}</p>
+              </div>
             </div>
           </div>
 
@@ -283,6 +287,19 @@
             <h2 class="text-sm font-bold text-slate-900 mb-3">ข้อมูลเพิ่มเติม</h2>
 
             <div class="space-y-4">
+              <!-- เลขทะเบียน (เฉพาะตอนส่งมอบ) -->
+              <div v-if="isDeliveryMode">
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                  เลขทะเบียนรถ
+                </label>
+                <input
+                  v-model="licensePlate"
+                  type="text"
+                  placeholder="กรอกเลขทะเบียนรถ"
+                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+                />
+              </div>
+
               <!-- เลขไมล์ -->
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">
@@ -356,6 +373,13 @@
                       placeholder="0.00"
                       class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
                     />
+                    <label class="block text-xs text-slate-400 mb-1 mt-2">หมายเหตุ <span class="text-slate-300">(ไม่บังคับ)</span></label>
+                    <input
+                      v-model="damageNote"
+                      type="text"
+                      placeholder="เช่น รอยขีดข่วนที่แฟริ่ง..."
+                      class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+                    />
                   </div>
                 </div>
 
@@ -379,6 +403,13 @@
                       type="number"
                       min="0"
                       placeholder="0.00"
+                      class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+                    />
+                    <label class="block text-xs text-slate-400 mb-1 mt-2">หมายเหตุ <span class="text-slate-300">(ไม่บังคับ)</span></label>
+                    <input
+                      v-model="lateNote"
+                      type="text"
+                      placeholder="เช่น คืนช้า 2 วัน..."
                       class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
                     />
                   </div>
@@ -406,6 +437,13 @@
                       placeholder="0.00"
                       class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
                     />
+                    <label class="block text-xs text-slate-400 mb-1 mt-2">หมายเหตุ <span class="text-slate-300">(ไม่บังคับ)</span></label>
+                    <input
+                      v-model="missingItemNote"
+                      type="text"
+                      placeholder="เช่น หมวกหาย 1 ใบ..."
+                      class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+                    />
                   </div>
                 </div>
 
@@ -422,7 +460,7 @@
           <button
             type="button"
             @click="handleSubmit"
-            :disabled="isSubmitting || !mileage || isMileageInvalid"
+            :disabled="isSubmitting || !mileage || isMileageInvalid || (isDeliveryMode && !licensePlate.trim())"
             class="w-full bg-[#051329] hover:bg-[#0a1f3d] disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
           >
             <template v-if="isSubmitting">
@@ -508,13 +546,17 @@ const photos = ref<(string | null)[]>([null, null, null])
 const photoFiles = ref<(File | null)>(null)
 const mileage = ref<number | null>(null)
 const helmet = ref(false)
+const licensePlate = ref('')
 
 const damage = ref(false)
 const damageFee = ref<number>(0)
+const damageNote = ref('')
 const lateReturn = ref(false)
 const lateFee = ref<number>(0)
+const lateNote = ref('')
 const missingItem = ref(false)
 const missingItemFee = ref<number>(0)
+const missingItemNote = ref('')
 
 const totalPenalty = computed(() => damageFee.value + lateFee.value + missingItemFee.value)
 
@@ -611,12 +653,16 @@ const selectBooking = (b: BookingWithDetails & { delivery_return_id?: number; he
   photos.value = [null, null, null]
   mileage.value = null
   helmet.value = false
+  licensePlate.value = ''
   damage.value = false
   damageFee.value = 0
+  damageNote.value = ''
   lateReturn.value = false
   lateFee.value = 0
+  lateNote.value = ''
   missingItem.value = false
   missingItemFee.value = 0
+  missingItemNote.value = ''
 }
 
 const onPhotoCapture = (event: Event, index: number) => {
@@ -681,7 +727,8 @@ const handleSubmit = async () => {
         image2: imageUrls[1],
         image3: imageUrls[2],
         mileage: mileage.value,
-        helmet: helmet.value
+        helmet: helmet.value,
+        licensePlate: licensePlate.value
       })
       alert('บันทึกการส่งมอบสำเร็จ!')
     } else {
@@ -701,10 +748,13 @@ const handleSubmit = async () => {
           bookingId: selectedBooking.value.booking_id,
           damage: damage.value,
           damageFee: damageFee.value,
+          damageNote: damageNote.value,
           lateReturn: lateReturn.value,
           lateFee: lateFee.value,
+          lateNote: lateNote.value,
           missingItem: missingItem.value,
-          missingItemFee: missingItemFee.value
+          missingItemFee: missingItemFee.value,
+          missingItemNote: missingItemNote.value
         })
       }
 

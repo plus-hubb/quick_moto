@@ -137,7 +137,7 @@ const fileInputRef = ref<HTMLInputElement | null>(null)
 const createdBookingId = ref<number | null>(null)
 const createdBookingCode = ref<string | null>(null)
 
-const expiresAt = Number(route.query.expires) || Date.now() + 5 * 60 * 1000
+const expiresAt = Number(route.query.expires) || Date.now() + 15 * 60 * 1000
 const remainingMs = ref(expiresAt - Date.now())
 let timerHandle: ReturnType<typeof setInterval> | null = null
 
@@ -459,7 +459,7 @@ const resetAndLoad = async () => {
     rentalPrice: Number(q.rentalPrice)
   }
 
-  remainingMs.value = Number(q.expires) || Date.now() + 5 * 60 * 1000
+  remainingMs.value = Number(q.expires) || Date.now() + 15 * 60 * 1000
   startCountdown()
 }
 

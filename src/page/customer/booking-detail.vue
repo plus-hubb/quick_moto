@@ -119,6 +119,10 @@
           </div>
         </div>
         <p class="text-xs text-slate-400 mt-2 text-center">ระยะเวลาเช่า {{ rentalDays }} วัน</p>
+        <div v-if="booking.license_plate" class="mt-2 bg-slate-50 rounded-xl p-3 text-center">
+          <p class="text-xs text-slate-400 mb-1">เลขทะเบียนรถ</p>
+          <p class="text-sm font-bold text-slate-900">{{ booking.license_plate }}</p>
+        </div>
       </section>
 
       <!-- คำแนะนำการรับรถและคืนรถ -->
