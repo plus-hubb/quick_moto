@@ -80,9 +80,12 @@ export function calcRentalDays(pickupDate: string, returnDate: string): number {
  * สร้างเลขที่การจองแบบ unique อย่างง่าย
  */
 function generateBookingCode(): string {
-  const now = Date.now().toString(36).toUpperCase()
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase()
-  return `BK-${now}-${rand}`
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let code = ''
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)]
+  }
+  return `BK-${code}`
 }
 
 /**

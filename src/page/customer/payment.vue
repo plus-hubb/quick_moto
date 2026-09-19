@@ -105,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter, onBeforeRouteLeave } from 'vue-router'
 import { confirmBooking, createPayment, updatePaymentSlip, releaseHold, calcRentalDays } from '../../services/bookingService'
 import { getPaymentByBookingId } from '../../services/deliveryReturnService'
@@ -271,6 +271,8 @@ const handleContinue = () => {
   }
 }
 
+const isHandlingBack = ref(false)
+
 const handleBack = async () => {
   if (!slipUploaded.value && draft.value) {
     const confirmLeave = window.confirm(
@@ -278,6 +280,8 @@ const handleBack = async () => {
     )
 
     if (!confirmLeave) return
+
+    isHandlingBack.value = true
 
     try {
       await releaseHold(draft.value.holdId)
@@ -303,6 +307,11 @@ const handleBeforeUnload = (event: BeforeUnloadEvent) => {
 }
 
 onBeforeRouteLeave(async (_to, _from, next) => {
+  if (isHandlingBack.value) {
+    next()
+    return
+  }
+
   if (slipUploaded.value || !draft.value) {
     next()
     return
@@ -359,37 +368,53 @@ onMounted(async () => {
     rentalPrice: Number(q.rentalPrice)
   }
 
-  // เช็คว่ามี booking ที่สร้างไว้แล้วหรือยัง (กรณี refresh หน้า)
+  // เช็คว่า hold นี้ยังอยู่ใน DB หรือไม่
+  // - ถ้า hold ยังอยู่ = หน้า booking สร้าง hold ใหม่ แล้วพามาที่นี่ (การจองใหม่)
+  // - ถ้า hold หายไป = confirmBooking() ลบ hold ไปแล้ว (ผู้ใช้ refresh หน้าหลังแนบสลิปแล้ว)
+  let holdExists = false
   try {
-    const { data: existingBooking } = await supabase
-      .from('booking')
-      .select('booking_id, booking_code')
-      .eq('customer_id', draft.value.customerId)
-      .eq('vehicle_id', draft.value.vehicleId)
-      .eq('pickup_date', draft.value.pickupDate)
-      .eq('return_date', draft.value.returnDate)
-      .neq('status', 'ยกเลิก')
-      .order('booking_id', { ascending: false })
-      .limit(1)
+    const { data: holdRow } = await supabase
+      .from('booking_hold')
+      .select('hold_id')
+      .eq('hold_id', draft.value.holdId)
       .maybeSingle()
+    holdExists = !!holdRow
+  } catch {
+    holdExists = false
+  }
 
-    if (existingBooking) {
-      // มี booking อยู่แล้ว -> โหลดสลิปเดิมมาแสดง
-      createdBookingId.value = existingBooking.booking_id
-      createdBookingCode.value = existingBooking.booking_code
+  // กรณี refresh หน้าหลังแนบสลิปแล้ว (hold ถูกลบไปแล้ว) ให้โหลด booking เดิมมาแสดง
+  if (!holdExists) {
+    try {
+      const { data: existingBooking } = await supabase
+        .from('booking')
+        .select('booking_id, booking_code')
+        .eq('customer_id', draft.value.customerId)
+        .eq('vehicle_id', draft.value.vehicleId)
+        .eq('pickup_date', draft.value.pickupDate)
+        .eq('return_date', draft.value.returnDate)
+        .neq('status', 'ยกเลิก')
+        .order('booking_id', { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
-      const payment = await getPaymentByBookingId(existingBooking.booking_id)
-      if (payment && payment.payment_slip) {
-        slipUrl.value = payment.payment_slip
-        slipUploaded.value = true
-        if (timerHandle) {
-          clearInterval(timerHandle)
-          timerHandle = null
+      if (existingBooking) {
+        createdBookingId.value = existingBooking.booking_id
+        createdBookingCode.value = existingBooking.booking_code
+
+        const payment = await getPaymentByBookingId(existingBooking.booking_id)
+        if (payment && payment.payment_slip) {
+          slipUrl.value = payment.payment_slip
+          slipUploaded.value = true
+          if (timerHandle) {
+            clearInterval(timerHandle)
+            timerHandle = null
+          }
         }
       }
+    } catch (err) {
+      console.error('Error checking existing booking:', err)
     }
-  } catch (err) {
-    console.error('Error checking existing booking:', err)
   }
 
   // เริ่ม countdown เฉพาะตอนที่ยังไม่ได้แนบสลิป
@@ -401,6 +426,47 @@ onMounted(async () => {
 onUnmounted(() => {
   if (timerHandle) clearInterval(timerHandle)
   window.removeEventListener('beforeunload', handleBeforeUnload)
+})
+
+// รีเซ็ตสถานะเมื่อกลับมาหน้าชำระเงินด้วย hold ใหม่ (กรณี component ถูก reuse โดยไม่ unmount)
+const resetAndLoad = async () => {
+  if (timerHandle) {
+    clearInterval(timerHandle)
+    timerHandle = null
+  }
+  slipUploaded.value = false
+  isUploading.value = false
+  slipUrl.value = null
+  isHandlingBack.value = false
+  createdBookingId.value = null
+  createdBookingCode.value = null
+  errorMessage.value = ''
+  if (fileInputRef.value) fileInputRef.value.value = ''
+
+  const q = route.query
+  if (!q.holdId || !q.vehicleId || !q.customerId || !q.quantity || !q.pickupDate || !q.returnDate || !q.rentalPrice) {
+    errorMessage.value = 'ไม่พบข้อมูลการจอง กรุณาทำรายการจองใหม่อีกครั้ง'
+    return
+  }
+
+  draft.value = {
+    holdId: Number(q.holdId),
+    vehicleId: Number(q.vehicleId),
+    customerId: Number(q.customerId),
+    quantity: Number(q.quantity),
+    pickupDate: String(q.pickupDate),
+    returnDate: String(q.returnDate),
+    rentalPrice: Number(q.rentalPrice)
+  }
+
+  remainingMs.value = Number(q.expires) || Date.now() + 5 * 60 * 1000
+  startCountdown()
+}
+
+watch(() => route.query.holdId, (newVal, oldVal) => {
+  if (newVal && newVal !== oldVal) {
+    resetAndLoad()
+  }
 })
 </script>
 

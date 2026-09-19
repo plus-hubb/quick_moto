@@ -222,13 +222,34 @@
             </div>
           </div>
 
+          <!-- รูปถ่ายตอนส่งมอบ (แสดงเฉพาะตอนรับคืน) -->
+          <template v-if="!isDeliveryMode && deliveryImages.length > 0">
+            <div class="bg-white rounded-2xl border border-slate-100 p-5 mb-4">
+              <h2 class="text-sm font-bold text-slate-900 mb-3">
+                <i class="fa-solid fa-image text-slate-400 mr-1"></i>
+                รูปถ่ายตอนส่งมอบ
+              </h2>
+              <div class="grid grid-cols-3 gap-3">
+                <div v-for="(img, idx) in deliveryImages" :key="'delivery-' + idx">
+                  <div class="aspect-square rounded-xl border border-slate-200 overflow-hidden">
+                    <img v-if="img" :src="img" class="w-full h-full object-cover" />
+                    <div v-else class="w-full h-full flex flex-col items-center justify-center text-slate-300 bg-slate-50">
+                      <i class="fa-solid fa-image-slash text-xl"></i>
+                      <span class="text-[10px] mt-1">ไม่มีรูป</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+
           <!-- ฟอร์มถ่ายรูป -->
           <div class="bg-white rounded-2xl border border-slate-100 p-5 mb-4">
             <h2 class="text-sm font-bold text-slate-900 mb-3">
               {{ isDeliveryMode ? 'รูปถ่ายตอนส่งมอบ' : 'รูปถ่ายตอนรับคืน' }}
             </h2>
             <div class="grid grid-cols-3 gap-3">
-              <div v-for="(img, idx) in photos" :key="idx">
+              <div v-for="(img, idx) in photos" :key="idx" class="relative">
                 <label
                   class="block aspect-square rounded-xl border-2 border-dashed border-slate-200 overflow-hidden cursor-pointer hover:border-slate-400 transition-colors relative"
                 >
@@ -245,6 +266,14 @@
                     <span class="text-[10px]">ถ่ายรูปที่ {{ idx + 1 }}</span>
                   </div>
                 </label>
+                <button
+                  v-if="img"
+                  type="button"
+                  @click.prevent="removePhoto(idx)"
+                  class="absolute top-1 right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors z-10"
+                >
+                  <i class="fa-solid fa-xmark text-[10px]"></i>
+                </button>
               </div>
             </div>
           </div>
@@ -473,7 +502,7 @@ const isLoading = ref(false)
 const isSubmitting = ref(false)
 
 const bookings = ref<BookingWithDetails[]>([])
-const selectedBooking = ref<BookingWithDetails & { delivery_return_id?: number; helmet_delivery?: boolean; mileage_delivery?: number | null } | null>(null)
+const selectedBooking = ref<BookingWithDetails & { delivery_return_id?: number; helmet_delivery?: boolean; mileage_delivery?: number | null; image_delivery_1?: string | null; image_delivery_2?: string | null; image_delivery_3?: string | null } | null>(null)
 
 const photos = ref<(string | null)[]>([null, null, null])
 const photoFiles = ref<(File | null)>(null)
@@ -552,6 +581,15 @@ const adminInitial = computed(() => {
   return admin.value?.name?.charAt(0)?.toUpperCase() ?? 'A'
 })
 
+const deliveryImages = computed(() => {
+  if (!selectedBooking.value) return []
+  return [
+    selectedBooking.value.image_delivery_1,
+    selectedBooking.value.image_delivery_2,
+    selectedBooking.value.image_delivery_3
+  ].filter((img): img is string => !!img)
+})
+
 const loadData = async () => {
   isLoading.value = true
   try {
@@ -595,6 +633,16 @@ const onPhotoCapture = (event: Event, index: number) => {
   // เก็บ file ไว้อัปโหลด
   if (!photoFiles.value) {
     photoFiles.value = file
+  }
+}
+
+const removePhoto = (index: number) => {
+  photos.value[index] = null
+  
+  // รีเซ็ต file input
+  const fileInputs = document.querySelectorAll('input[type="file"]') as NodeListOf<HTMLInputElement>
+  if (fileInputs[index]) {
+    fileInputs[index].value = ''
   }
 }
 

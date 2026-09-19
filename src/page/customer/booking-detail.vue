@@ -63,6 +63,18 @@
         </div>
       </div>
 
+      <!-- หมายเหตุการยกเลิก (แสดงเฉพาะเมื่อมี cancel_note) -->
+      <div
+        v-if="booking.cancel_note"
+        class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-start gap-3"
+      >
+        <i class="fa-solid fa-message text-amber-500 text-lg mt-0.5"></i>
+        <div class="flex-1">
+          <p class="text-sm font-bold text-amber-800">หมายเหตุ</p>
+          <p class="text-xs text-amber-700 mt-1">{{ booking.cancel_note }}</p>
+        </div>
+      </div>
+
       <!-- Vehicle Card -->
       <section class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-6">
         <div class="w-full h-52 sm:h-64 bg-slate-200 rounded-xl overflow-hidden mb-4">
