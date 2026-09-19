@@ -36,6 +36,7 @@ export interface BookingWithDetails {
   cancel_reason: string | null
   cancel_note: string | null
   license_plate: string | null
+  accommodation: string | null
   customer_name: string
   customer_phone: string
   vehicle_brand: string
@@ -53,7 +54,7 @@ export interface BookingWithDetails {
 export async function getPendingApprovals(): Promise<BookingWithDetails[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate, accommodation')
     .eq('status', 'รออนุมัติ')
     .order('booking_date', { ascending: false })
 
@@ -140,7 +141,7 @@ export async function cancelNoShowBooking(bookingId: number, cancelNote?: string
 export async function getPendingDeliveries(): Promise<BookingWithDetails[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate, accommodation')
     .eq('status', 'อนุมัติแล้ว')
     .order('pickup_date', { ascending: false })
 
@@ -205,7 +206,7 @@ export async function getPendingReturns(): Promise<(BookingWithDetails & { deliv
 
   const { data: bookings, error: bookingError } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate, accommodation')
     .in('booking_id', bookingIds)
     .eq('status', 'กำลังเช่า')
 
@@ -261,6 +262,7 @@ export async function saveDelivery(input: {
   mileage: number
   helmet: boolean
   licensePlate: string
+  accommodation: string
 }): Promise<DeliveryReturn> {
   const now = new Date()
   const dateStr = now.toISOString().split('T')[0]
@@ -293,7 +295,7 @@ export async function saveDelivery(input: {
   // อัปเดตสถานะ booking เป็น "กำลังเช่า" พร้อมเลขทะเบียน
   const { error: statusError } = await supabase
     .from('booking')
-    .update({ status: 'กำลังเช่า', license_plate: input.licensePlate })
+    .update({ status: 'กำลังเช่า', license_plate: input.licensePlate, accommodation: input.accommodation })
     .eq('booking_id', input.bookingId)
 
   if (statusError) {
@@ -390,7 +392,7 @@ export async function uploadImage(file: File): Promise<string> {
 export async function getCancelledBookings(): Promise<(BookingWithDetails & { payment_slip: string | null })[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate, accommodation')
     .eq('status', 'ยกเลิก')
     .order('booking_date', { ascending: false })
 
@@ -470,7 +472,7 @@ export interface CompletedBooking extends BookingWithDetails {
 export async function getCompletedBookings(): Promise<CompletedBooking[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate, accommodation')
     .eq('status', 'เสร็จสิ้น')
     .order('return_date', { ascending: false })
 

@@ -223,6 +223,10 @@
                 <p class="text-xs text-slate-400">เลขทะเบียน</p>
                 <p class="font-medium text-slate-900">{{ selectedBooking.license_plate }}</p>
               </div>
+              <div v-if="selectedBooking.accommodation">
+                <p class="text-xs text-slate-400">ที่พัก</p>
+                <p class="font-medium text-slate-900">{{ selectedBooking.accommodation }}</p>
+              </div>
             </div>
           </div>
 
@@ -296,6 +300,19 @@
                   v-model="licensePlate"
                   type="text"
                   placeholder="กรอกเลขทะเบียนรถ"
+                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+                />
+              </div>
+
+              <!-- ที่พัก (เฉพาะตอนส่งมอบ) -->
+              <div v-if="isDeliveryMode">
+                <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                  ที่พักของผู้เช่า
+                </label>
+                <input
+                  v-model="accommodation"
+                  type="text"
+                  placeholder="กรอกที่พักของผู้เช่า"
                   class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
                 />
               </div>
@@ -547,6 +564,7 @@ const photoFiles = ref<(File | null)>(null)
 const mileage = ref<number | null>(null)
 const helmet = ref(false)
 const licensePlate = ref('')
+const accommodation = ref('')
 
 const damage = ref(false)
 const damageFee = ref<number>(0)
@@ -654,6 +672,7 @@ const selectBooking = (b: BookingWithDetails & { delivery_return_id?: number; he
   mileage.value = null
   helmet.value = false
   licensePlate.value = ''
+  accommodation.value = ''
   damage.value = false
   damageFee.value = 0
   damageNote.value = ''
@@ -728,7 +747,8 @@ const handleSubmit = async () => {
         image3: imageUrls[2],
         mileage: mileage.value,
         helmet: helmet.value,
-        licensePlate: licensePlate.value
+        licensePlate: licensePlate.value,
+        accommodation: accommodation.value
       })
       alert('บันทึกการส่งมอบสำเร็จ!')
     } else {

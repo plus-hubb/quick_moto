@@ -201,6 +201,10 @@
                 <p class="text-xs text-slate-400 mb-0.5">เลขทะเบียน</p>
                 <p class="font-medium text-slate-900">{{ selectedBooking.license_plate }}</p>
               </div>
+              <div v-if="selectedBooking.accommodation">
+                <p class="text-xs text-slate-400 mb-0.5">ที่พัก</p>
+                <p class="font-medium text-slate-900">{{ selectedBooking.accommodation }}</p>
+              </div>
               <div>
                 <p class="text-xs text-slate-400 mb-0.5">วันรับรถ</p>
                 <p class="font-medium text-slate-900">{{ selectedBooking.pickup_date }}</p>

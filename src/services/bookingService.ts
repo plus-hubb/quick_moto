@@ -23,6 +23,7 @@ export interface Booking {
   cancel_reason: string | null
   cancel_note: string | null
   license_plate: string | null
+  accommodation: string | null
 }
 
 export interface Payment {

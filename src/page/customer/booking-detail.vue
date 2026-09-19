@@ -123,6 +123,45 @@
           <p class="text-xs text-slate-400 mb-1">เลขทะเบียนรถ</p>
           <p class="text-sm font-bold text-slate-900">{{ booking.license_plate }}</p>
         </div>
+        <div v-if="booking.accommodation" class="mt-2 bg-slate-50 rounded-xl p-3 text-center">
+          <p class="text-xs text-slate-400 mb-1">ที่พัก</p>
+          <p class="text-sm font-bold text-slate-900">{{ booking.accommodation }}</p>
+        </div>
+      </section>
+
+      <!-- ค่าปรับ (แสดงเฉพาะเมื่อมี) -->
+      <section v-if="penalty && penalty.total_penalty > 0" class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 mb-6">
+        <h3 class="text-sm font-bold text-slate-900 mb-3">
+          <i class="fa-solid fa-circle-exclamation text-red-500 mr-1"></i>
+          ค่าปรับ
+        </h3>
+        <div class="space-y-2">
+          <div v-if="penalty.damage" class="text-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-600">มีความเสียหาย</span>
+              <span class="font-medium text-slate-900">฿{{ formatPrice(penalty.damage_fee) }}</span>
+            </div>
+            <p v-if="penalty.damage_note" class="text-xs text-slate-400 mt-0.5">{{ penalty.damage_note }}</p>
+          </div>
+          <div v-if="penalty.late_return" class="text-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-600">คืนรถล่าช้า</span>
+              <span class="font-medium text-slate-900">฿{{ formatPrice(penalty.late_fee) }}</span>
+            </div>
+            <p v-if="penalty.late_note" class="text-xs text-slate-400 mt-0.5">{{ penalty.late_note }}</p>
+          </div>
+          <div v-if="penalty.missing_item" class="text-sm">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-600">อุปกรณ์หาย / ไม่ครบ</span>
+              <span class="font-medium text-slate-900">฿{{ formatPrice(penalty.missing_item_fee) }}</span>
+            </div>
+            <p v-if="penalty.missing_item_note" class="text-xs text-slate-400 mt-0.5">{{ penalty.missing_item_note }}</p>
+          </div>
+          <div class="bg-red-50 rounded-xl p-3 flex items-center justify-between mt-2">
+            <span class="text-sm font-medium text-red-700">ยอดค่าปรับรวม</span>
+            <span class="text-lg font-bold text-red-700">฿{{ formatPrice(penalty.total_penalty) }}</span>
+          </div>
+        </div>
       </section>
 
       <!-- คำแนะนำการรับรถและคืนรถ -->
@@ -222,6 +261,7 @@ import {
   normalizeStatus,
   type BookingWithVehicle
 } from '../../services/bookingService'
+import { getPenaltyByBookingId, type Penalty } from '../../services/deliveryReturnService'
 
 const route = useRoute()
 const router = useRouter()
@@ -231,6 +271,7 @@ const goBack = () => {
 }
 
 const booking = ref<BookingWithVehicle | null>(null)
+const penalty = ref<Penalty | null>(null)
 const isLoading = ref(false)
 const isCancelling = ref(false)
 const errorMessage = ref('')
@@ -331,6 +372,10 @@ const loadBooking = async () => {
       return
     }
     booking.value = data
+
+    if (normalizeStatus(data.status) === 'เสร็จสิ้น') {
+      penalty.value = await getPenaltyByBookingId(bookingId)
+    }
   } catch (err) {
     errorMessage.value = 'โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
   } finally {
