@@ -92,6 +92,38 @@
           </div>
         </div>
 
+        <!-- Top 3 รถยอดฮิต -->
+        <div v-if="topVehicles.length > 0" class="mb-8">
+          <h2 class="text-sm font-bold text-slate-900 mb-3">
+            <i class="fa-solid fa-fire text-orange-500 mr-1"></i>
+            รถยอดฮิต Top 3
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div
+              v-for="(v, idx) in topVehicles"
+              :key="v.vehicle_id"
+              class="bg-white rounded-2xl border border-slate-100 overflow-hidden flex items-center gap-4 p-4"
+            >
+              <div
+                class="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-lg shrink-0"
+                :class="idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-slate-400' : 'bg-orange-300'"
+              >
+                {{ idx + 1 }}
+              </div>
+              <div class="w-14 h-14 rounded-xl bg-slate-100 overflow-hidden shrink-0">
+                <img v-if="v.image" :src="v.image" class="w-full h-full object-cover" />
+                <div v-else class="w-full h-full flex items-center justify-center text-slate-300">
+                  <i class="fa-solid fa-motorcycle"></i>
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold text-slate-900 truncate">{{ v.brand }} {{ v.model }}</p>
+                <p class="text-xs text-slate-400">จอง {{ v.booking_count }} ครั้ง</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Recent Bookings -->
         <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden">
           <div class="px-5 py-4 border-b border-slate-100">
@@ -184,6 +216,16 @@ const stats = ref({
   pendingBookings: 0
 })
 
+interface TopVehicle {
+  vehicle_id: number
+  brand: string
+  model: string
+  image: string | null
+  booking_count: number
+}
+
+const topVehicles = ref<TopVehicle[]>([])
+
 interface RecentBooking {
   booking_id: number
   booking_code: string
@@ -263,6 +305,47 @@ const loadData = async () => {
         return_date: b.return_date,
         status: b.status
       }))
+    }
+
+    // ดึงรถที่มีคนจองเยอะสุด 3 อันดับ (ไม่นับการจองที่ยกเลิก)
+    const { data: allBookings } = await supabase
+      .from('booking')
+      .select('vehicle_id')
+      .not('status', 'eq', 'ยกเลิก')
+
+    if (allBookings && allBookings.length > 0) {
+      const countMap = new Map<number, number>()
+      for (const b of allBookings) {
+        countMap.set(b.vehicle_id, (countMap.get(b.vehicle_id) ?? 0) + 1)
+      }
+
+      const topIds = [...countMap.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([id]) => id)
+
+      if (topIds.length > 0) {
+        const { data: topVehicleData } = await supabase
+          .from('vehicle')
+          .select('vehicle_id, brand, model, image')
+          .in('vehicle_id', topIds)
+
+        const topVehicleMap = new Map((topVehicleData ?? []).map(v => [v.vehicle_id, v]))
+
+        topVehicles.value = topIds
+          .map(id => {
+            const v = topVehicleMap.get(id)
+            if (!v) return null
+            return {
+              vehicle_id: v.vehicle_id,
+              brand: v.brand,
+              model: v.model,
+              image: v.image ?? null,
+              booking_count: countMap.get(id) ?? 0
+            }
+          })
+          .filter((v): v is TopVehicle => v !== null)
+      }
     }
   } catch (err) {
     console.error('Load dashboard error:', err)

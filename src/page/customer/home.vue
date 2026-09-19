@@ -106,6 +106,28 @@
         </div>
       </section>
 
+      <!-- เรียงลำดับ -->
+      <section class="mb-6">
+        <h2 class="text-base font-bold text-slate-900 mb-3">เรียงลำดับ</h2>
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            v-for="opt in sortOptions"
+            :key="opt.value"
+            type="button"
+            @click="selectedSort = opt.value"
+            :class="[
+              'flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all',
+              selectedSort === opt.value
+                ? 'bg-[#051329] text-white shadow-md'
+                : 'bg-white text-slate-500 border border-slate-200'
+            ]"
+          >
+            <i :class="opt.icon" class="text-xs"></i>
+            <span>{{ opt.label }}</span>
+          </button>
+        </div>
+      </section>
+
       <!-- ผลการค้นหา / รถแนะนำ -->
       <section>
         <h2 class="text-base font-bold text-slate-900 mb-3">
@@ -168,6 +190,16 @@ const searchForm = reactive({
 const selectedTransmission = ref<'Automatic' | 'Manual'>(
   (route.query.transmission as 'Automatic' | 'Manual') || 'Automatic'
 )
+
+// ตัวเลือกเรียงลำดับ
+const sortOptions = [
+  { value: 'price_asc', label: 'ราคา น้อย→มาก', icon: 'fa-solid fa-arrow-up-short-wide' },
+  { value: 'price_desc', label: 'ราคา มาก→น้อย', icon: 'fa-solid fa-arrow-down-wide-short' },
+  { value: 'engine_asc', label: 'ซีซี น้อย→มาก', icon: 'fa-solid fa-arrow-up-short-wide' },
+  { value: 'engine_desc', label: 'ซีซี มาก→น้อย', icon: 'fa-solid fa-arrow-down-wide-short' }
+] as const
+
+const selectedSort = ref<string>('price_asc')
 
 // State สำหรับข้อมูลรถจาก Supabase
 const vehicles = ref<Vehicle[]>([])
@@ -236,9 +268,9 @@ const checkAvailability = async () => {
   }
 }
 
-// กรองรถตามเงื่อนไขค้นหา ระบบเกียร์ และวันว่าง
+// กรองรถตามเงื่อนไขค้นหา ระบบเกียร์ วันว่าง แล้วเรียงลำดับ
 const filteredVehicles = computed(() => {
-  return vehicles.value.filter((v) => {
+  const result = vehicles.value.filter((v) => {
     if (!matchesKeyword(v, searchForm.keyword)) return false
     if (!matchesTransmission(v)) return false
     if (hasSearchedDates.value && availableVehicleIds.value) {
@@ -246,6 +278,23 @@ const filteredVehicles = computed(() => {
     }
     return true
   })
+
+  const sorted = [...result]
+  switch (selectedSort.value) {
+    case 'price_asc':
+      sorted.sort((a, b) => Number(a.price) - Number(b.price))
+      break
+    case 'price_desc':
+      sorted.sort((a, b) => Number(b.price) - Number(a.price))
+      break
+    case 'engine_asc':
+      sorted.sort((a, b) => (a.engine_size ?? 0) - (b.engine_size ?? 0))
+      break
+    case 'engine_desc':
+      sorted.sort((a, b) => (b.engine_size ?? 0) - (a.engine_size ?? 0))
+      break
+  }
+  return sorted
 })
 
 // Debounce สำหรับเช็ควันว่าง
