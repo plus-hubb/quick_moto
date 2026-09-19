@@ -61,7 +61,7 @@
             <input
               v-model="searchKeyword"
               type="text"
-              placeholder="ค้นหาด้วยรหัสจอง ชื่อลูกค้า หรือรุ่นรถ..."
+              placeholder="ค้นหาด้วยรหัสจอง ชื่อลูกค้า เบอร์โทร ทะเบียนรถ หรือรุ่นรถ..."
               class="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
             />
           </div>
@@ -574,7 +574,7 @@ const filteredBookings = computed(() => {
   const keyword = searchKeyword.value.trim().toLowerCase()
   if (!keyword) return bookings.value
   return bookings.value.filter((b) => {
-    const haystack = `${b.booking_code} ${b.customer_name} ${b.vehicle_brand} ${b.vehicle_model}`.toLowerCase()
+    const haystack = `${b.booking_code} ${b.customer_name} ${b.customer_phone} ${b.vehicle_brand} ${b.vehicle_model} ${b.license_plate ?? ''}`.toLowerCase()
     return haystack.includes(keyword)
   })
 })
