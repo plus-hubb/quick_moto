@@ -53,7 +53,7 @@ export interface BookingWithDetails {
 export async function getPendingApprovals(): Promise<BookingWithDetails[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, license_plate')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate')
     .eq('status', 'รออนุมัติ')
     .order('booking_date', { ascending: false })
 
@@ -140,7 +140,7 @@ export async function cancelNoShowBooking(bookingId: number, cancelNote?: string
 export async function getPendingDeliveries(): Promise<BookingWithDetails[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, license_plate')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate')
     .eq('status', 'อนุมัติแล้ว')
     .order('pickup_date', { ascending: false })
 
@@ -205,7 +205,7 @@ export async function getPendingReturns(): Promise<(BookingWithDetails & { deliv
 
   const { data: bookings, error: bookingError } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, license_plate')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate')
     .in('booking_id', bookingIds)
     .eq('status', 'กำลังเช่า')
 
@@ -470,7 +470,7 @@ export interface CompletedBooking extends BookingWithDetails {
 export async function getCompletedBookings(): Promise<CompletedBooking[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, license_plate')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate')
     .eq('status', 'เสร็จสิ้น')
     .order('return_date', { ascending: false })
 
