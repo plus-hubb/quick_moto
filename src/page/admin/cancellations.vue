@@ -213,6 +213,10 @@
                 <p class="text-xs text-slate-400 mb-0.5">สถานะ</p>
                 <p class="font-medium text-red-600">{{ cancelReasonLabel }}</p>
               </div>
+              <div v-if="selectedBooking.cancel_note" class="col-span-2">
+                <p class="text-xs text-slate-400 mb-0.5">หมายเหตุ</p>
+                <p class="font-medium text-slate-900 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm">{{ selectedBooking.cancel_note }}</p>
+              </div>
             </div>
           </div>
 

@@ -159,6 +159,40 @@
   </div>
 
   <BottomNavigation active="bookings" />
+
+  <!-- Cancel Note Modal -->
+  <div v-if="showCancelModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md p-6">
+      <h3 class="text-lg font-bold text-slate-900 mb-1">ยืนยันยกเลิกการจอง</h3>
+      <p class="text-sm text-slate-500 mb-4">รหัส: {{ booking?.booking_code }}</p>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-slate-700 mb-1.5">หมายเหตุ <span class="text-xs text-slate-400">(ไม่บังคับ)</span></label>
+        <textarea
+          v-model="cancelNote"
+          rows="3"
+          placeholder="เช่น เปลี่ยนวันไม่ได้, ไม่ต้องการเช่าแล้ว..."
+          class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all resize-none"
+        ></textarea>
+      </div>
+      <div class="flex gap-3">
+        <button
+          type="button"
+          @click="showCancelModal = false; cancelNote = ''"
+          class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium transition-all active:scale-[0.98]"
+        >
+          กลับ
+        </button>
+        <button
+          type="button"
+          @click="confirmCancel"
+          :disabled="isCancelling"
+          class="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-medium transition-all active:scale-[0.98]"
+        >
+          {{ isCancelling ? 'กำลังยกเลิก...' : 'ยืนยันยกเลิก' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -184,6 +218,8 @@ const booking = ref<BookingWithVehicle | null>(null)
 const isLoading = ref(false)
 const isCancelling = ref(false)
 const errorMessage = ref('')
+const showCancelModal = ref(false)
+const cancelNote = ref('')
 
 const rentalDays = computed(() =>
   booking.value ? calcRentalDays(booking.value.pickup_date, booking.value.return_date) : 0
@@ -288,14 +324,17 @@ const loadBooking = async () => {
 
 const handleCancelBooking = async () => {
   if (!booking.value) return
-  const confirmed = window.confirm('ยืนยันยกเลิกการจองนี้หรือไม่?')
-  if (!confirmed) return
+  showCancelModal.value = true
+}
+
+const confirmCancel = async () => {
+  if (!booking.value) return
 
   isCancelling.value = true
   try {
-    await cancelBookingRecord(booking.value.booking_id)
-    // โหลดข้อมูลใหม่จาก DB จริงๆ แทนการเดาแก้ค่าใน local state
-    // เพื่อให้ UI ตรงกับความจริงเสมอ และเห็น error ชัดเจนถ้า RLS บล็อกการ update
+    await cancelBookingRecord(booking.value.booking_id, cancelNote.value || undefined)
+    showCancelModal.value = false
+    cancelNote.value = ''
     await loadBooking()
   } catch (err) {
     const message =

@@ -278,6 +278,40 @@
 
       </main>
     </div>
+
+    <!-- Cancel Note Modal -->
+    <div v-if="showCancelModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl w-full max-w-md p-6">
+        <h3 class="text-lg font-bold text-slate-900 mb-1">ยืนยันยกเลิกการจอง</h3>
+        <p class="text-sm text-slate-500 mb-4">รหัส: {{ cancelTarget?.booking_code }}</p>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">หมายเหตุ <span class="text-xs text-slate-400">(ไม่บังคับ)</span></label>
+          <textarea
+            v-model="cancelNote"
+            rows="3"
+            placeholder="เช่น ลูกค้าขอเปลี่ยนวัน, รถซ่อมไม่พร้อม..."
+            class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all resize-none"
+          ></textarea>
+        </div>
+        <div class="flex gap-3">
+          <button
+            type="button"
+            @click="showCancelModal = false; cancelNote = ''"
+            class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium transition-all active:scale-[0.98]"
+          >
+            กลับ
+          </button>
+          <button
+            type="button"
+            @click="confirmReject"
+            :disabled="isProcessing"
+            class="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-medium transition-all active:scale-[0.98]"
+          >
+            {{ isProcessing ? 'กำลังยกเลิก...' : 'ยืนยันยกเลิก' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -307,6 +341,9 @@ const paymentSlip = ref<string | null>(null)
 const slipError = ref('')
 const slipLoading = ref(false)
 const searchKeyword = ref('')
+const showCancelModal = ref(false)
+const cancelTarget = ref<BookingWithDetails | null>(null)
+const cancelNote = ref('')
 
 const filteredBookings = computed(() => {
   const keyword = searchKeyword.value.trim().toLowerCase()
@@ -383,17 +420,22 @@ const handleApprove = async () => {
 
 const handleReject = async () => {
   if (!selectedBooking.value || isProcessing.value) return
+  cancelTarget.value = selectedBooking.value
+  cancelNote.value = ''
+  showCancelModal.value = true
+}
 
-  const confirmed = window.confirm(
-    `ยืนยันยกเลิกการจอง ${selectedBooking.value.booking_code}?`
-  )
-  if (!confirmed) return
+const confirmReject = async () => {
+  if (!cancelTarget.value || isProcessing.value) return
 
   isProcessing.value = true
 
   try {
-    await rejectBooking(selectedBooking.value.booking_id)
+    await rejectBooking(cancelTarget.value.booking_id, cancelNote.value || undefined)
     alert('ยกเลิกการจองสำเร็จ')
+    showCancelModal.value = false
+    cancelNote.value = ''
+    cancelTarget.value = null
     selectedBooking.value = null
     await loadData()
   } catch (err) {

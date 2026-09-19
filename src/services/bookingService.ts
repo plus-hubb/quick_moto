@@ -21,6 +21,7 @@ export interface Booking {
   rental_price: number
   status: string
   cancel_reason: string | null
+  cancel_note: string | null
 }
 
 export interface Payment {
@@ -297,6 +298,41 @@ export async function getCustomerById(customerId: number): Promise<Customer | nu
 }
 
 /**
+ * Walk-in: ค้นหาลูกค้าจากเบอร์โทร ถ้าไม่มีก็สร้างใหม่ (ไม่ต้องมี auth)
+ */
+export async function findOrCreateCustomer(input: {
+  name: string
+  phone: string
+  email?: string
+}): Promise<Customer> {
+  const { data: existing } = await supabase
+    .from('customer')
+    .select('*')
+    .eq('phone', input.phone)
+    .maybeSingle()
+
+  if (existing) return existing
+
+  const { data: created, error } = await supabase
+    .from('customer')
+    .insert({
+      name: input.name,
+      phone: input.phone,
+      email: input.email || `walkin-${input.phone}-${Date.now()}@local`,
+      auth_user_id: null
+    })
+    .select('*')
+    .single()
+
+  if (error) {
+    console.error('findOrCreateCustomer insert error:', error.message)
+    throw new Error('ไม่สามารถสร้างข้อมูลลูกค้าได้: ' + error.message)
+  }
+
+  return created
+}
+
+/**
  * ยกเลิกการจองที่ยืนยันแล้ว (เปลี่ยน status เป็น "ยกเลิก" ไม่ลบแถวทิ้ง เพื่อเก็บประวัติไว้)
  */
 export async function cancelConfirmedBooking(bookingId: number): Promise<void> {
@@ -382,10 +418,10 @@ export async function getBookingDetail(bookingId: number): Promise<BookingWithVe
 /**
  * ยกเลิกการจอง (เปลี่ยนสถานะเป็น "ยกเลิก" — ไม่ลบแถวทิ้ง เพื่อให้ยังอยู่ในประวัติได้)
  */
-export async function cancelBookingRecord(bookingId: number): Promise<void> {
+export async function cancelBookingRecord(bookingId: number, cancelNote?: string): Promise<void> {
   const { error, data } = await supabase
     .from('booking')
-    .update({ status: 'ยกเลิก', cancel_reason: 'customer_cancel' })
+    .update({ status: 'ยกเลิก', cancel_reason: 'customer_cancel', cancel_note: cancelNote || null })
     .eq('booking_id', bookingId)
     .select('booking_id')
 

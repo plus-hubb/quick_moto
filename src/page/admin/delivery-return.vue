@@ -410,6 +410,41 @@
 
       </main>
     </div>
+
+    <!-- Cancel Note Modal -->
+    <div v-if="showCancelModal" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl w-full max-w-md p-6">
+        <h3 class="text-lg font-bold text-slate-900 mb-1">ยืนยันยกเลิก (ไม่มารับรถ)</h3>
+        <p class="text-sm text-slate-500 mb-1">รหัส: {{ cancelTarget?.booking_code }}</p>
+        <p class="text-xs text-red-500 mb-4">ลูกค้าไม่มารับรถภายในวันที่เช่า — ไม่มีการคืนเงิน</p>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">หมายเหตุ <span class="text-xs text-slate-400">(ไม่บังคับ)</span></label>
+          <textarea
+            v-model="cancelNote"
+            rows="3"
+            placeholder="เช่น ติดต่อลูกค้าไม่ได้, ลูกค้ายืนยันไม่มา..."
+            class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all resize-none"
+          ></textarea>
+        </div>
+        <div class="flex gap-3">
+          <button
+            type="button"
+            @click="showCancelModal = false; cancelNote = ''"
+            class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium transition-all active:scale-[0.98]"
+          >
+            กลับ
+          </button>
+          <button
+            type="button"
+            @click="confirmCancelNoShow"
+            :disabled="isCancelling"
+            class="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-medium transition-all active:scale-[0.98]"
+          >
+            {{ isCancelling ? 'กำลังยกเลิก...' : 'ยืนยันยกเลิก' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -482,18 +517,27 @@ const isPastPickupDate = (pickupDate: string): boolean => {
 }
 
 const isCancelling = ref(false)
+const showCancelModal = ref(false)
+const cancelTarget = ref<BookingWithDetails | null>(null)
+const cancelNote = ref('')
 
 const handleCancelNoShow = async (booking: BookingWithDetails) => {
   if (isCancelling.value) return
-  const confirmed = window.confirm(
-    `ยืนยันยกเลิกการจอง ${booking.booking_code}?\n\nเหตุผล: ลูกค้าไม่มารับรถภายในวันที่เช่า\nไม่มีการคืนเงิน`
-  )
-  if (!confirmed) return
+  cancelTarget.value = booking
+  cancelNote.value = ''
+  showCancelModal.value = true
+}
+
+const confirmCancelNoShow = async () => {
+  if (!cancelTarget.value || isCancelling.value) return
 
   isCancelling.value = true
   try {
-    await cancelNoShowBooking(booking.booking_id)
+    await cancelNoShowBooking(cancelTarget.value.booking_id, cancelNote.value || undefined)
     alert('ยกเลิกการจองสำเร็จ')
+    showCancelModal.value = false
+    cancelNote.value = ''
+    cancelTarget.value = null
     await loadData()
   } catch (err) {
     console.error('Cancel no-show error:', err)

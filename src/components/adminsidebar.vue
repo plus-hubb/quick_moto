@@ -63,6 +63,7 @@ const route = useRoute()
 const navItems = [
   { path: '/admin/dashboard', label: 'แดชบอร์ด', icon: 'fa-solid fa-gauge-high' },
   { path: '/admin/vehicles', label: 'จัดการข้อมูลรถ', icon: 'fa-solid fa-motorcycle' },
+  { path: '/admin/walk-in-booking', label: 'จองรถ (Walk-in)', icon: 'fa-solid fa-store' },
   { path: '/admin/pending-approval', label: 'รออนุมัติ', icon: 'fa-regular fa-clock' },
   { path: '/admin/delivery', label: 'รอส่งมอบ', icon: 'fa-solid fa-truck-ramp-box' },
   { path: '/admin/return', label: 'รอรับคืน', icon: 'fa-solid fa-box-open' },

@@ -19,6 +19,7 @@ import PendingApprovalView from '../page/admin/pending-approval.vue'
 import CancellationsView from '../page/admin/cancellations.vue'
 import RentalHistoryView from '../page/admin/rental-history.vue'
 import RevenueView from '../page/admin/revenue.vue'
+import WalkInView from '../page/admin/walk-in-booking.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -119,6 +120,11 @@ const routes: Array<RouteRecordRaw> = [
   path: '/admin/revenue',
   name: 'admin-revenue',
   component: RevenueView,
+},
+{
+  path: '/admin/walk-in-booking',
+  name: 'admin-walk-in-booking',
+  component: WalkInView,
 },
 ]
 

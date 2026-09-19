@@ -34,6 +34,7 @@ export interface BookingWithDetails {
   status: string
   booking_date: string
   cancel_reason: string | null
+  cancel_note: string | null
   customer_name: string
   customer_phone: string
   vehicle_brand: string
@@ -102,10 +103,10 @@ export async function approveBooking(bookingId: number): Promise<void> {
 /**
  * ยกเลิกการจอง (เปลี่ยนสถานะเป็น "ยกเลิก")
  */
-export async function rejectBooking(bookingId: number): Promise<void> {
+export async function rejectBooking(bookingId: number, cancelNote?: string): Promise<void> {
   const { error } = await supabase
     .from('booking')
-    .update({ status: 'ยกเลิก', cancel_reason: 'admin_reject' })
+    .update({ status: 'ยกเลิก', cancel_reason: 'admin_reject', cancel_note: cancelNote || null })
     .eq('booking_id', bookingId)
     .eq('status', 'รออนุมัติ')
 
@@ -119,10 +120,10 @@ export async function rejectBooking(bookingId: number): Promise<void> {
  * ยกเลิกการจองที่ "อนุมัติแล้ว" แต่ลูกค้าไม่มารับรถ (เลยวันรับรถแล้ว)
  * เปลี่ยนสถานะเป็น "ยกเลิก" พร้อม cancel_reason = 'no_show'
  */
-export async function cancelNoShowBooking(bookingId: number): Promise<void> {
+export async function cancelNoShowBooking(bookingId: number, cancelNote?: string): Promise<void> {
   const { error } = await supabase
     .from('booking')
-    .update({ status: 'ยกเลิก', cancel_reason: 'no_show' })
+    .update({ status: 'ยกเลิก', cancel_reason: 'no_show', cancel_note: cancelNote || null })
     .eq('booking_id', bookingId)
     .eq('status', 'อนุมัติแล้ว')
 
@@ -381,7 +382,7 @@ export async function uploadImage(file: File): Promise<string> {
 export async function getCancelledBookings(): Promise<(BookingWithDetails & { payment_slip: string | null })[]> {
   const { data: bookings, error } = await supabase
     .from('booking')
-    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason')
+    .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note')
     .eq('status', 'ยกเลิก')
     .order('booking_date', { ascending: false })
 
