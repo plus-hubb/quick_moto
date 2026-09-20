@@ -352,8 +352,12 @@
                     type="number"
                     min="0"
                     :placeholder="isDeliveryMode ? 'กรอกจำนวนหมวกที่ให้ลูกค้า' : 'กรอกจำนวนหมวกที่ได้คืน'"
-                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+                    class="w-full px-4 py-2.5 bg-slate-50 border rounded-xl text-sm focus:outline-none focus:ring-2 transition-all"
+                    :class="isHelmetInvalid ? 'border-red-400 focus:ring-red-500' : 'border-slate-200 focus:ring-slate-800'"
                   />
+                  <p v-if="isHelmetInvalid" class="text-xs text-red-500 mt-1">
+                    จำนวนหมวกรับคืนต้องไม่มากกว่าตอนส่งมอบ ({{ selectedBooking?.helmet_delivery }} ใบ)
+                  </p>
                 </div>
               </template>
               <template v-else-if="!isDeliveryMode">
@@ -479,7 +483,7 @@
           <button
             type="button"
             @click="handleSubmit"
-            :disabled="isSubmitting || !mileage || isMileageInvalid || (isDeliveryMode && !licensePlate.trim())"
+            :disabled="isSubmitting || !mileage || isMileageInvalid || isHelmetInvalid || (isDeliveryMode && !licensePlate.trim())"
             class="w-full bg-[#051329] hover:bg-[#0a1f3d] disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2 transition-all active:scale-[0.99]"
           >
             <template v-if="isSubmitting">
@@ -587,6 +591,12 @@ const isMileageInvalid = computed(() => {
 })
 
 const isDeliveryMode = computed(() => route.path === '/admin/delivery')
+
+const isHelmetInvalid = computed(() => {
+  if (isDeliveryMode.value) return false
+  if (!selectedBooking.value?.helmet_delivery) return false
+  return helmet.value > selectedBooking.value.helmet_delivery
+})
 
 const searchKeyword = ref('')
 
@@ -716,6 +726,7 @@ const removePhoto = (index: number) => {
 const handleSubmit = async () => {
   if (!selectedBooking.value || !mileage.value || isSubmitting.value) return
   if (isMileageInvalid.value) return
+  if (isHelmetInvalid.value) return
 
   const confirmed = window.confirm(
     isDeliveryMode.value
