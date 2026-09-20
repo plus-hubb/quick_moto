@@ -586,7 +586,8 @@ const handleSubmit = async () => {
       customerId: customer.customer_id,
       quantity: selectedVehicle.value.quantity,
       pickupDate: form.pickupDate,
-      returnDate: form.returnDate
+      returnDate: form.returnDate,
+      client: supabaseAdmin
     })
 
     const booking = await confirmBooking({
@@ -596,7 +597,8 @@ const handleSubmit = async () => {
       quantity: selectedVehicle.value.quantity,
       pickupDate: form.pickupDate,
       returnDate: form.returnDate,
-      rentalPrice: totalPrice.value
+      rentalPrice: totalPrice.value,
+      client: supabaseAdmin
     })
 
     createdBookingCode.value = booking.booking_code

@@ -181,7 +181,10 @@ export async function createHold(input: {
   quantity: number
   pickupDate: string
   returnDate: string
+  client?: typeof supabaseAdmin
 }): Promise<BookingHold> {
+  const db = input.client || supabase
+
   const availableUnits = await getAvailableUnits(
     input.vehicleId,
     input.quantity,
@@ -195,7 +198,7 @@ export async function createHold(input: {
 
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString()
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('booking_hold')
     .insert({
       vehicle_id: input.vehicleId,
@@ -219,8 +222,9 @@ export async function createHold(input: {
  * ใช้เมื่อหมดเวลา 5 นาที หรือลูกค้ากดย้อนกลับก่อนแนบสลิป
  * ลบ hold ทิ้ง ทำให้คันนี้ในช่วงวันที่นี้กลับมาว่างทันที
  */
-export async function releaseHold(holdId: number): Promise<void> {
-  const { error } = await supabase
+export async function releaseHold(holdId: number, client?: typeof supabaseAdmin): Promise<void> {
+  const db = client || supabase
+  const { error } = await db
     .from('booking_hold')
     .delete()
     .eq('hold_id', holdId)
@@ -243,9 +247,12 @@ export async function confirmBooking(input: {
   pickupDate: string
   returnDate: string
   rentalPrice: number
+  client?: typeof supabaseAdmin
 }): Promise<Booking> {
+  const db = input.client || supabase
+
   // ลบ hold ของตัวเองออกก่อน แล้วเช็คว่างอีกครั้ง (ไม่นับ hold ตัวเองซ้ำ)
-  await releaseHold(input.holdId)
+  await releaseHold(input.holdId, db)
 
   const availableUnits = await getAvailableUnits(
     input.vehicleId,
@@ -259,7 +266,7 @@ export async function confirmBooking(input: {
   }
 
   // คำนวณราคา server-side (ไม่เชื่อ client)
-  const { data: priceData, error: priceError } = await supabase
+  const { data: priceData, error: priceError } = await db
     .rpc('calc_rental_price', {
       p_vehicle_id: input.vehicleId,
       p_pickup_date: input.pickupDate,
@@ -273,7 +280,7 @@ export async function confirmBooking(input: {
 
   const rentalPrice = Number(priceData)
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('booking')
     .insert({
       booking_code: generateBookingCode(),
