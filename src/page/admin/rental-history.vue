@@ -281,7 +281,7 @@
             </div>
 
             <p class="text-xs text-slate-400 mb-2">รูปถ่ายตอนส่งมอบ</p>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-5 gap-2">
               <div v-for="(img, idx) in deliveryImages" :key="idx" class="aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
                 <img v-if="img" :src="img" class="w-full h-full object-cover" />
                 <div v-else class="w-full h-full flex items-center justify-center text-slate-300">
@@ -319,7 +319,7 @@
             </div>
 
             <p class="text-xs text-slate-400 mb-2">รูปถ่ายตอนรับคืน</p>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-5 gap-2">
               <div v-for="(img, idx) in returnImages" :key="idx" class="aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50">
                 <img v-if="img" :src="img" class="w-full h-full object-cover" />
                 <div v-else class="w-full h-full flex items-center justify-center text-slate-300">
@@ -447,13 +447,13 @@ const formatPrice = (price: number) => Number(price).toLocaleString('en-US')
 const deliveryImages = computed(() => {
   if (!selectedBooking.value?.delivery_return) return []
   const dr = selectedBooking.value.delivery_return
-  return [dr.image_delivery_1, dr.image_delivery_2, dr.image_delivery_3]
+  return [dr.image_delivery_1, dr.image_delivery_2, dr.image_delivery_3, dr.image_delivery_4, dr.image_delivery_5]
 })
 
 const returnImages = computed(() => {
   if (!selectedBooking.value?.delivery_return) return []
   const dr = selectedBooking.value.delivery_return
-  return [dr.image_return_1, dr.image_return_2, dr.image_return_3]
+  return [dr.image_return_1, dr.image_return_2, dr.image_return_3, dr.image_return_4, dr.image_return_5]
 })
 
 const totalCharge = computed(() => {

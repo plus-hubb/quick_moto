@@ -237,7 +237,7 @@
                 <i class="fa-solid fa-image text-slate-400 mr-1"></i>
                 รูปถ่ายตอนส่งมอบ
               </h2>
-              <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-5 gap-3">
                 <div v-for="(img, idx) in deliveryImages" :key="'delivery-' + idx">
                   <div class="aspect-square rounded-xl border border-slate-200 overflow-hidden">
                     <img v-if="img" :src="img" class="w-full h-full object-cover" />
@@ -256,7 +256,7 @@
             <h2 class="text-sm font-bold text-slate-900 mb-3">
               {{ isDeliveryMode ? 'รูปถ่ายตอนส่งมอบ' : 'รูปถ่ายตอนรับคืน' }}
             </h2>
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-5 gap-3">
               <div v-for="(img, idx) in photos" :key="idx" class="relative">
                 <label
                   class="block aspect-square rounded-xl border-2 border-dashed border-slate-200 overflow-hidden cursor-pointer hover:border-slate-400 transition-colors relative"
@@ -563,9 +563,9 @@ const isLoading = ref(false)
 const isSubmitting = ref(false)
 
 const bookings = ref<BookingWithDetails[]>([])
-const selectedBooking = ref<BookingWithDetails & { delivery_return_id?: number; helmet_delivery?: number; mileage_delivery?: number | null; image_delivery_1?: string | null; image_delivery_2?: string | null; image_delivery_3?: string | null } | null>(null)
+const selectedBooking = ref<BookingWithDetails & { delivery_return_id?: number; helmet_delivery?: number; mileage_delivery?: number | null; image_delivery_1?: string | null; image_delivery_2?: string | null; image_delivery_3?: string | null; image_delivery_4?: string | null; image_delivery_5?: string | null } | null>(null)
 
-const photos = ref<(string | null)[]>([null, null, null])
+const photos = ref<(string | null)[]>([null, null, null, null, null])
 const photoFiles = ref<(File | null)>(null)
 const mileage = ref<number | null>(null)
 const helmet = ref(0)
@@ -658,7 +658,9 @@ const deliveryImages = computed(() => {
   return [
     selectedBooking.value.image_delivery_1,
     selectedBooking.value.image_delivery_2,
-    selectedBooking.value.image_delivery_3
+    selectedBooking.value.image_delivery_3,
+    selectedBooking.value.image_delivery_4,
+    selectedBooking.value.image_delivery_5
   ].filter((img): img is string => !!img)
 })
 
@@ -680,7 +682,7 @@ const loadData = async () => {
 
 const selectBooking = (b: BookingWithDetails & { delivery_return_id?: number; helmet_delivery?: number }) => {
   selectedBooking.value = b
-  photos.value = [null, null, null]
+  photos.value = [null, null, null, null, null]
   mileage.value = null
   helmet.value = 0
   licensePlate.value = ''
@@ -738,13 +740,13 @@ const handleSubmit = async () => {
   isSubmitting.value = true
 
   try {
-    // อัปโหลดรูปทั้ง 3 รูป
-    const imageUrls: (string | null)[] = [null, null, null]
+    // อัปโหลดรูปทั้ง 5 รูป
+    const imageUrls: (string | null)[] = [null, null, null, null, null]
 
     // ใช้ hidden input เพื่อเก็บ file references
     const fileInputs = document.querySelectorAll('input[type="file"]') as NodeListOf<HTMLInputElement>
 
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       const file = fileInputs[i]?.files?.[0]
       if (file) {
         imageUrls[i] = await uploadImage(file)
@@ -758,6 +760,8 @@ const handleSubmit = async () => {
         image1: imageUrls[0],
         image2: imageUrls[1],
         image3: imageUrls[2],
+        image4: imageUrls[3],
+        image5: imageUrls[4],
         mileage: mileage.value,
         helmet: helmet.value,
         licensePlate: licensePlate.value,
@@ -772,6 +776,8 @@ const handleSubmit = async () => {
         image1: imageUrls[0],
         image2: imageUrls[1],
         image3: imageUrls[2],
+        image4: imageUrls[3],
+        image5: imageUrls[4],
         mileage: mileage.value,
         helmet: helmetReturn
       })
