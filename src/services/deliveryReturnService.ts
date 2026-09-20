@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from '../lib/supabase'
+import { supabaseAdmin } from '../lib/supabase'
 
 export interface DeliveryReturn {
   delivery_return_id: number
