@@ -227,6 +227,20 @@
                 <p class="text-xs text-slate-400">ที่พัก</p>
                 <p class="font-medium text-slate-900">{{ selectedBooking.accommodation }}</p>
               </div>
+              <template v-if="!isDeliveryMode">
+                <div>
+                  <p class="text-xs text-slate-400">ผู้รับรถ</p>
+                  <p class="font-medium text-slate-900">
+                    {{ selectedBooking.receiver_name || selectedBooking.customer_name }}
+                  </p>
+                </div>
+                <div>
+                  <p class="text-xs text-slate-400">เบอร์ผู้รับรถ</p>
+                  <p class="font-medium text-slate-900">
+                    {{ selectedBooking.receiver_phone || selectedBooking.customer_phone }}
+                  </p>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -597,7 +611,7 @@ const isLoading = ref(false)
 const isSubmitting = ref(false)
 
 const bookings = ref<BookingWithDetails[]>([])
-const selectedBooking = ref<BookingWithDetails & { delivery_return_id?: number; helmet_delivery?: number; mileage_delivery?: number | null; image_delivery_1?: string | null; image_delivery_2?: string | null; image_delivery_3?: string | null; image_delivery_4?: string | null; image_delivery_5?: string | null } | null>(null)
+const selectedBooking = ref<BookingWithDetails & { delivery_return_id?: number; helmet_delivery?: number; mileage_delivery?: number | null; receiver_name?: string | null; receiver_phone?: string | null; image_delivery_1?: string | null; image_delivery_2?: string | null; image_delivery_3?: string | null; image_delivery_4?: string | null; image_delivery_5?: string | null } | null>(null)
 
 const photos = ref<(string | null)[]>([null, null, null, null, null])
 const photoFiles = ref<(File | null)>(null)

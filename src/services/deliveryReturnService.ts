@@ -194,10 +194,10 @@ export async function getPendingDeliveries(): Promise<BookingWithDetails[]> {
 /**
  * ดึงรายการที่ส่งมอบแล้วแต่ยังไม่ได้รับคืน (รอรับคืน)
  */
-export async function getPendingReturns(): Promise<(BookingWithDetails & { delivery_return_id: number; helmet_delivery: number; mileage_delivery: number | null; image_delivery_1: string | null; image_delivery_2: string | null; image_delivery_3: string | null; image_delivery_4: string | null; image_delivery_5: string | null })[]> {
+export async function getPendingReturns(): Promise<(BookingWithDetails & { delivery_return_id: number; helmet_delivery: number; mileage_delivery: number | null; receiver_name: string | null; receiver_phone: string | null; image_delivery_1: string | null; image_delivery_2: string | null; image_delivery_3: string | null; image_delivery_4: string | null; image_delivery_5: string | null })[]> {
   const { data: dr, error } = await supabase
     .from('delivery_return')
-    .select('delivery_return_id, booking_id, helmet_delivery, mileage_delivery, image_delivery_1, image_delivery_2, image_delivery_3, image_delivery_4, image_delivery_5')
+    .select('delivery_return_id, booking_id, helmet_delivery, mileage_delivery, receiver_name, receiver_phone, image_delivery_1, image_delivery_2, image_delivery_3, image_delivery_4, image_delivery_5')
     .is('return_date', null)
 
   if (error) {
@@ -236,6 +236,8 @@ export async function getPendingReturns(): Promise<(BookingWithDetails & { deliv
 
   const helmetDeliveryMap = new Map(dr.map(d => [d.booking_id, d.helmet_delivery]))
   const mileageDeliveryMap = new Map(dr.map(d => [d.booking_id, d.mileage_delivery]))
+  const receiverNameMap = new Map(dr.map(d => [d.booking_id, d.receiver_name]))
+  const receiverPhoneMap = new Map(dr.map(d => [d.booking_id, d.receiver_phone]))
   const imageDelivery1Map = new Map(dr.map(d => [d.booking_id, d.image_delivery_1]))
   const imageDelivery2Map = new Map(dr.map(d => [d.booking_id, d.image_delivery_2]))
   const imageDelivery3Map = new Map(dr.map(d => [d.booking_id, d.image_delivery_3]))
@@ -247,6 +249,8 @@ export async function getPendingReturns(): Promise<(BookingWithDetails & { deliv
     delivery_return_id: drMap.get(b.booking_id)!,
     helmet_delivery: helmetDeliveryMap.get(b.booking_id) ?? 0,
     mileage_delivery: mileageDeliveryMap.get(b.booking_id) ?? null,
+    receiver_name: receiverNameMap.get(b.booking_id) ?? null,
+    receiver_phone: receiverPhoneMap.get(b.booking_id) ?? null,
     image_delivery_1: imageDelivery1Map.get(b.booking_id) ?? null,
     image_delivery_2: imageDelivery2Map.get(b.booking_id) ?? null,
     image_delivery_3: imageDelivery3Map.get(b.booking_id) ?? null,

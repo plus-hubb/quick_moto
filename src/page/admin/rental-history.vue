@@ -278,10 +278,14 @@
                 <p class="text-xs text-slate-400 mb-0.5">ส่งมอบโดย</p>
                 <p class="font-medium text-slate-900">{{ selectedBooking.delivery_return.delivery_by ?? '-' }}</p>
               </div>
-              <div v-if="selectedBooking.delivery_return.receiver_name" class="col-span-2">
+              <div class="col-span-2">
                 <p class="text-xs text-slate-400 mb-0.5">ผู้รับรถ</p>
-                <p class="font-medium text-slate-900">{{ selectedBooking.delivery_return.receiver_name }}</p>
-                <p v-if="selectedBooking.delivery_return.receiver_phone" class="text-xs text-slate-400">{{ selectedBooking.delivery_return.receiver_phone }}</p>
+                <p class="font-medium text-slate-900">
+                  {{ selectedBooking.delivery_return.receiver_name || selectedBooking.customer_name }}
+                </p>
+                <p class="text-xs text-slate-400">
+                  {{ selectedBooking.delivery_return.receiver_phone || selectedBooking.customer_phone }}
+                </p>
               </div>
             </div>
 
