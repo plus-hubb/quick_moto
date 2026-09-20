@@ -202,7 +202,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminSidebar from '../../components/adminsidebar.vue'
 import { getCurrentAdmin, logoutAdmin } from '../../services/customerService'
-import { supabase } from '../../lib/supabase'
+import { supabaseAdmin } from '../../lib/supabase'
 
 const router = useRouter()
 
@@ -263,9 +263,9 @@ const loadData = async () => {
 
   try {
     const [bookingsRes, pendingRes, allVehiclesRes] = await Promise.all([
-      supabase.from('booking').select('booking_id', { count: 'exact', head: true }),
-      supabase.from('booking').select('booking_id', { count: 'exact', head: true }).eq('status', 'รออนุมัติ'),
-      supabase.from('vehicle').select('brand, model, quantity')
+      supabaseAdmin.from('booking').select('booking_id', { count: 'exact', head: true }),
+      supabaseAdmin.from('booking').select('booking_id', { count: 'exact', head: true }).eq('status', 'รออนุมัติ'),
+      supabaseAdmin.from('vehicle').select('brand, model, quantity')
     ])
 
     stats.value.bookings = bookingsRes.count ?? 0
@@ -278,7 +278,7 @@ const loadData = async () => {
     }
 
     // ดึงการจองล่าสุด 5 รายการ
-    const { data: bookings } = await supabase
+    const { data: bookings } = await supabaseAdmin
       .from('booking')
       .select('booking_id, booking_code, pickup_date, return_date, status, customer_id, vehicle_id')
       .order('booking_id', { ascending: false })
@@ -289,8 +289,8 @@ const loadData = async () => {
       const vehicleIds = [...new Set(bookings.map(b => b.vehicle_id))]
 
       const [customersData, vehiclesData] = await Promise.all([
-        supabase.from('customer').select('customer_id, name').in('customer_id', customerIds),
-        supabase.from('vehicle').select('vehicle_id, brand, model').in('vehicle_id', vehicleIds)
+        supabaseAdmin.from('customer').select('customer_id, name').in('customer_id', customerIds),
+        supabaseAdmin.from('vehicle').select('vehicle_id, brand, model').in('vehicle_id', vehicleIds)
       ])
 
       const customerMap = new Map((customersData.data ?? []).map(c => [c.customer_id, c.name]))
@@ -308,7 +308,7 @@ const loadData = async () => {
     }
 
     // ดึงรถที่มีคนจองเยอะสุด 3 อันดับ (ไม่นับการจองที่ยกเลิก)
-    const { data: allBookings } = await supabase
+    const { data: allBookings } = await supabaseAdmin
       .from('booking')
       .select('vehicle_id')
       .not('status', 'eq', 'ยกเลิก')
@@ -325,7 +325,7 @@ const loadData = async () => {
         .map(([id]) => id)
 
       if (topIds.length > 0) {
-        const { data: topVehicleData } = await supabase
+        const { data: topVehicleData } = await supabaseAdmin
           .from('vehicle')
           .select('vehicle_id, brand, model, image')
           .in('vehicle_id', topIds)

@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { supabaseAdmin } from '../lib/supabase'
 import { normalizeStatus } from './bookingService'
 
 export interface RevenueRecord {
@@ -80,7 +80,7 @@ function calcBookingRevenue(b: {
  */
 export async function getRevenueData(): Promise<RevenueSummary> {
   // ดึง booking ทั้งหมดที่ status ไม่ใช่ รออนุมัติ (เพราะยังไม่มีรายได้)
-  const { data: bookings, error } = await supabase
+  const { data: bookings, error } = await supabaseAdmin
     .from('booking')
     .select('booking_id, booking_code, booking_date, pickup_date, return_date, deposit_price, rental_price, status, cancel_reason')
 
@@ -90,7 +90,7 @@ export async function getRevenueData(): Promise<RevenueSummary> {
   }
 
   // ดึงค่าปรับทั้งหมด
-  const { data: penalties } = await supabase
+  const { data: penalties } = await supabaseAdmin
     .from('penalty')
     .select('booking_id, total_penalty')
 

@@ -426,7 +426,7 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminSidebar from '../../components/adminsidebar.vue'
 import { getCurrentAdmin, logoutAdmin } from '../../services/customerService'
-import { supabase } from '../../lib/supabase'
+import { supabaseAdmin } from '../../lib/supabase'
 import {
   calcRentalDays,
   getAvailableUnits,
@@ -533,7 +533,7 @@ watch(() => form.phone, (val) => {
 const loadVehicles = async () => {
   isLoadingVehicles.value = true
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('vehicle')
       .select('*')
       .gt('quantity', 0)

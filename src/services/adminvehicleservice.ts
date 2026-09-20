@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { supabaseAdmin } from '../lib/supabase'
 import type { Vehicle } from './customerService'
 
 export interface VehicleFormData {
@@ -16,7 +16,7 @@ export interface VehicleFormData {
  * ดึงรถทั้งหมด (รวมคันที่ quantity = 0 ด้วย เพราะแอดมินต้องเห็นทุกคัน)
  */
 export async function getAllVehiclesAdmin(): Promise<Vehicle[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('vehicle')
     .select('*')
     .order('vehicle_id', { ascending: false })
@@ -33,7 +33,7 @@ export async function getAllVehiclesAdmin(): Promise<Vehicle[]> {
  * เพิ่มรถใหม่
  */
 export async function createVehicle(form: VehicleFormData): Promise<Vehicle> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('vehicle')
     .insert(form)
     .select('*')
@@ -51,7 +51,7 @@ export async function createVehicle(form: VehicleFormData): Promise<Vehicle> {
  * แก้ไขข้อมูลรถ
  */
 export async function updateVehicle(vehicleId: number, form: VehicleFormData): Promise<Vehicle> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('vehicle')
     .update(form)
     .eq('vehicle_id', vehicleId)
@@ -73,7 +73,7 @@ export async function updateVehicle(vehicleId: number, form: VehicleFormData): P
  * เพื่อป้องกันประวัติการจองเสียหาย แนะนำให้ตั้ง quantity = 0 แทนการลบถ้ารถเคยถูกจอง
  */
 export async function deleteVehicle(vehicleId: number): Promise<void> {
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('vehicle')
     .delete()
     .eq('vehicle_id', vehicleId)

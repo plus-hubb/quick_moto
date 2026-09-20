@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { supabase } from '../lib/supabase'
+import { supabase, supabaseAdmin } from '../lib/supabase'
 
 // Import หน้าต่าง ๆ ตามโครงสร้างโฟลเดอร์ในรูป
 import SignupView from '../page/signup.vue'
@@ -160,28 +160,35 @@ router.beforeEach(async (to) => {
     return
   }
 
-  // เช็ค Supabase session
-  const { data: { session } } = await supabase.auth.getSession()
-
-  // ไม่มี session = ต้อง login ก่อน
-  if (!session) {
-    return { name: 'signin' }
-  }
-
-  // ถ้าเป็นหน้าแอดมิน — เช็คว่ามี admin record ใน DB จริง
+  // ถ้าเป็นหน้าแอดมิน — ต้อง login ด้วย admin session
   if (adminRoutes.includes(to.name as string)) {
-    const { data: adminData } = await supabase
+    const { data: { session } } = await supabaseAdmin.auth.getSession()
+
+    if (!session) {
+      return { name: 'signin' }
+    }
+
+    // เช็คว่ามี admin record ใน DB จริง
+    const { data: adminData } = await supabaseAdmin
       .from('admin')
       .select('admin_id')
       .eq('email', session.user.email)
       .maybeSingle()
 
     if (!adminData) {
-      // ไม่ใช่แอดมิน — sign out แล้วกลับ signin
-      await supabase.auth.signOut()
+      await supabaseAdmin.auth.signOut()
       localStorage.removeItem('admin')
       return { name: 'signin' }
     }
+
+    return
+  }
+
+  // หน้าลูกค้า — ต้อง login ด้วย customer session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (!session) {
+    return { name: 'signin' }
   }
 })
 

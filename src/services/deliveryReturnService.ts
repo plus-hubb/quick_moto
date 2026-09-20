@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { supabase, supabaseAdmin } from '../lib/supabase'
 
 export interface DeliveryReturn {
   delivery_return_id: number
@@ -58,7 +58,7 @@ export interface BookingWithDetails {
  * ดึงรายการจองสถานะ "รออนุมัติ"
  */
 export async function getPendingApprovals(): Promise<BookingWithDetails[]> {
-  const { data: bookings, error } = await supabase
+  const { data: bookings, error } = await supabaseAdmin
     .from('booking')
     .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate, accommodation')
     .eq('status', 'รออนุมัติ')
@@ -75,8 +75,8 @@ export async function getPendingApprovals(): Promise<BookingWithDetails[]> {
   const vehicleIds = [...new Set(bookings.map(b => b.vehicle_id))]
 
   const [customersRes, vehiclesRes] = await Promise.all([
-    supabase.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
-    supabase.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds)
+    supabaseAdmin.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
+    supabaseAdmin.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds)
   ])
 
   const customerMap = new Map((customersRes.data ?? []).map(c => [c.customer_id, c]))
@@ -96,7 +96,7 @@ export async function getPendingApprovals(): Promise<BookingWithDetails[]> {
  * อนุมัติการจอง (เปลี่ยนสถานะเป็น "อนุมัติแล้ว")
  */
 export async function approveBooking(bookingId: number): Promise<void> {
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('booking')
     .update({ status: 'อนุมัติแล้ว' })
     .eq('booking_id', bookingId)
@@ -112,7 +112,7 @@ export async function approveBooking(bookingId: number): Promise<void> {
  * ยกเลิกการจอง (เปลี่ยนสถานะเป็น "ยกเลิก")
  */
 export async function rejectBooking(bookingId: number, cancelNote?: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('booking')
     .update({ status: 'ยกเลิก', cancel_reason: 'admin_reject', cancel_note: cancelNote || null })
     .eq('booking_id', bookingId)
@@ -129,7 +129,7 @@ export async function rejectBooking(bookingId: number, cancelNote?: string): Pro
  * เปลี่ยนสถานะเป็น "ยกเลิก" พร้อม cancel_reason = 'no_show'
  */
 export async function cancelNoShowBooking(bookingId: number, cancelNote?: string): Promise<void> {
-  const { error } = await supabase
+  const { error } = await supabaseAdmin
     .from('booking')
     .update({ status: 'ยกเลิก', cancel_reason: 'no_show', cancel_note: cancelNote || null })
     .eq('booking_id', bookingId)
@@ -145,7 +145,7 @@ export async function cancelNoShowBooking(bookingId: number, cancelNote?: string
  * ดึงรายการจองสถานะ "อนุมัติแล้ว" ที่ยังไม่มี delivery record (รอส่งมอบ)
  */
 export async function getPendingDeliveries(): Promise<BookingWithDetails[]> {
-  const { data: bookings, error } = await supabase
+  const { data: bookings, error } = await supabaseAdmin
     .from('booking')
     .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate, accommodation')
     .eq('status', 'อนุมัติแล้ว')
@@ -159,7 +159,7 @@ export async function getPendingDeliveries(): Promise<BookingWithDetails[]> {
   if (!bookings || bookings.length === 0) return []
 
   // เช็คว่า booking ไหนยังไม่มี delivery record
-  const { data: existingDR } = await supabase
+  const { data: existingDR } = await supabaseAdmin
     .from('delivery_return')
     .select('booking_id')
 
@@ -174,8 +174,8 @@ export async function getPendingDeliveries(): Promise<BookingWithDetails[]> {
   const vehicleIds = [...new Set(undelivered.map(b => b.vehicle_id))]
 
   const [customersRes, vehiclesRes] = await Promise.all([
-    supabase.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
-    supabase.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds)
+    supabaseAdmin.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
+    supabaseAdmin.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds)
   ])
 
   const customerMap = new Map((customersRes.data ?? []).map(c => [c.customer_id, c]))
@@ -195,7 +195,7 @@ export async function getPendingDeliveries(): Promise<BookingWithDetails[]> {
  * ดึงรายการที่ส่งมอบแล้วแต่ยังไม่ได้รับคืน (รอรับคืน)
  */
 export async function getPendingReturns(): Promise<(BookingWithDetails & { delivery_return_id: number; helmet_delivery: number; mileage_delivery: number | null; receiver_name: string | null; receiver_phone: string | null; image_delivery_1: string | null; image_delivery_2: string | null; image_delivery_3: string | null; image_delivery_4: string | null; image_delivery_5: string | null })[]> {
-  const { data: dr, error } = await supabase
+  const { data: dr, error } = await supabaseAdmin
     .from('delivery_return')
     .select('delivery_return_id, booking_id, helmet_delivery, mileage_delivery, receiver_name, receiver_phone, image_delivery_1, image_delivery_2, image_delivery_3, image_delivery_4, image_delivery_5')
     .is('return_date', null)
@@ -210,7 +210,7 @@ export async function getPendingReturns(): Promise<(BookingWithDetails & { deliv
   const bookingIds = dr.map(d => d.booking_id)
   const drMap = new Map(dr.map(d => [d.booking_id, d.delivery_return_id]))
 
-  const { data: bookings, error: bookingError } = await supabase
+  const { data: bookings, error: bookingError } = await supabaseAdmin
     .from('booking')
     .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate, accommodation')
     .in('booking_id', bookingIds)
@@ -227,8 +227,8 @@ export async function getPendingReturns(): Promise<(BookingWithDetails & { deliv
   const vehicleIds = [...new Set(bookings.map(b => b.vehicle_id))]
 
   const [customersRes, vehiclesRes] = await Promise.all([
-    supabase.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
-    supabase.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds)
+    supabaseAdmin.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
+    supabaseAdmin.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds)
   ])
 
   const customerMap = new Map((customersRes.data ?? []).map(c => [c.customer_id, c]))
@@ -288,7 +288,7 @@ export async function saveDelivery(input: {
 
   const adminData = JSON.parse(localStorage.getItem('admin') ?? '{}')
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('delivery_return')
     .insert({
       booking_id: input.bookingId,
@@ -315,7 +315,7 @@ export async function saveDelivery(input: {
   }
 
   // อัปเดตสถานะ booking เป็น "กำลังเช่า" พร้อมเลขทะเบียน
-  const { error: statusError } = await supabase
+  const { error: statusError } = await supabaseAdmin
     .from('booking')
     .update({ status: 'กำลังเช่า', license_plate: input.licensePlate, accommodation: input.accommodation })
     .eq('booking_id', input.bookingId)
@@ -348,7 +348,7 @@ export async function saveReturn(input: {
 
   const adminData = JSON.parse(localStorage.getItem('admin') ?? '{}')
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('delivery_return')
     .update({
       image_return_1: input.image1,
@@ -372,7 +372,7 @@ export async function saveReturn(input: {
   }
 
   // อัปเดตสถานะ booking เป็น "เสร็จสิ้น"
-  const { error: statusError } = await supabase
+  const { error: statusError } = await supabaseAdmin
     .from('booking')
     .update({ status: 'เสร็จสิ้น' })
     .eq('booking_id', input.bookingId)
@@ -392,7 +392,7 @@ export async function uploadImage(file: File): Promise<string> {
   const ext = file.name.split('.').pop() ?? 'jpg'
   const fileName = `delivery/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
-  const { error } = await supabase.storage
+  const { error } = await supabaseAdmin.storage
     .from('qrick_moto_img')
     .upload(fileName, file, { contentType: file.type })
 
@@ -401,7 +401,7 @@ export async function uploadImage(file: File): Promise<string> {
     throw error
   }
 
-  const { data: urlData } = supabase.storage
+  const { data: urlData } = supabaseAdmin.storage
     .from('qrick_moto_img')
     .getPublicUrl(fileName)
 
@@ -416,7 +416,7 @@ export async function uploadImage(file: File): Promise<string> {
  * ดึงรายการจองสถานะ "ยกเลิก"
  */
 export async function getCancelledBookings(): Promise<(BookingWithDetails & { payment_slip: string | null })[]> {
-  const { data: bookings, error } = await supabase
+  const { data: bookings, error } = await supabaseAdmin
     .from('booking')
     .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate, accommodation')
     .eq('status', 'ยกเลิก')
@@ -434,9 +434,9 @@ export async function getCancelledBookings(): Promise<(BookingWithDetails & { pa
   const bookingIds = bookings.map(b => b.booking_id)
 
   const [customersRes, vehiclesRes, paymentsRes] = await Promise.all([
-    supabase.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
-    supabase.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds),
-    supabase.from('payment').select('booking_id, payment_slip').in('booking_id', bookingIds).order('payment_id', { ascending: true })
+    supabaseAdmin.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
+    supabaseAdmin.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds),
+    supabaseAdmin.from('payment').select('booking_id, payment_slip').in('booking_id', bookingIds).order('payment_id', { ascending: true })
   ])
 
   if (paymentsRes.error) {
@@ -496,7 +496,7 @@ export interface CompletedBooking extends BookingWithDetails {
  * ดึงรายการจองสถานะ "เสร็จสิ้น" พร้อมข้อมูลส่ง/รับ/ค่าปรับ
  */
 export async function getCompletedBookings(): Promise<CompletedBooking[]> {
-  const { data: bookings, error } = await supabase
+  const { data: bookings, error } = await supabaseAdmin
     .from('booking')
     .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate, accommodation')
     .eq('status', 'เสร็จสิ้น')
@@ -514,11 +514,11 @@ export async function getCompletedBookings(): Promise<CompletedBooking[]> {
   const bookingIds = bookings.map(b => b.booking_id)
 
   const [customersRes, vehiclesRes, drRes, penaltyRes, paymentRes] = await Promise.all([
-    supabase.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
-    supabase.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds),
-    supabase.from('delivery_return').select('*').in('booking_id', bookingIds),
-    supabase.from('penalty').select('*').in('booking_id', bookingIds),
-    supabase.from('payment').select('booking_id, payment_slip').in('booking_id', bookingIds).order('payment_id', { ascending: true })
+    supabaseAdmin.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
+    supabaseAdmin.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds),
+    supabaseAdmin.from('delivery_return').select('*').in('booking_id', bookingIds),
+    supabaseAdmin.from('penalty').select('*').in('booking_id', bookingIds),
+    supabaseAdmin.from('payment').select('booking_id, payment_slip').in('booking_id', bookingIds).order('payment_id', { ascending: true })
   ])
 
   const customerMap = new Map((customersRes.data ?? []).map(c => [c.customer_id, c]))
@@ -576,7 +576,7 @@ export async function savePenalty(input: {
 }): Promise<Penalty> {
   const totalPenalty = input.damageFee + input.lateFee + input.missingItemFee
 
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('penalty')
     .insert({
       booking_id: input.bookingId,
@@ -606,7 +606,7 @@ export async function savePenalty(input: {
  * ดึงค่าปรับของ booking
  */
 export async function getPenaltyByBookingId(bookingId: number): Promise<Penalty | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('penalty')
     .select('*')
     .eq('booking_id', bookingId)

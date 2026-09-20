@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { supabase, supabaseAdmin } from '../lib/supabase'
 
 export interface CustomerSignupData {
   fullName: string
@@ -263,11 +263,11 @@ export const loginAdmin = async (
     throw new Error('กรุณากรอกรหัสผ่าน')
   }
 
-  // 1. Login ผ่าน Supabase Auth
+  // 1. Login ผ่าน Supabase Auth (ใช้ client แอดมิน)
   const {
     data: authData,
     error: authError
-  } = await supabase.auth.signInWithPassword({
+  } = await supabaseAdmin.auth.signInWithPassword({
     email: cleanEmail,
     password
   })
@@ -285,7 +285,7 @@ export const loginAdmin = async (
   const {
     data: adminData,
     error: adminError
-  } = await supabase
+  } = await supabaseAdmin
     .from('admin')
     .select('admin_id, name, email')
     .eq('email', cleanEmail)
@@ -300,7 +300,7 @@ export const loginAdmin = async (
 
   if (!adminData) {
     // ไม่พบในตาราง admin = ไม่ใช่แอดมิน → sign out แล้วThrow เพื่อให้ caller ลอง login เป็น customer
-    await supabase.auth.signOut()
+    await supabaseAdmin.auth.signOut()
     throw new Error('NOT_FOUND')
   }
 
@@ -318,11 +318,11 @@ export const loginAdmin = async (
 // ==============================
 
 export const getCurrentAdmin = async (): Promise<Admin | null> => {
-  // 1. เช็ค session จาก Supabase Auth
+  // 1. เช็ค session จาก Supabase Auth (admin client)
   const {
     data: sessionData,
     error: sessionError
-  } = await supabase.auth.getSession()
+  } = await supabaseAdmin.auth.getSession()
 
   if (sessionError || !sessionData.session?.user) {
     localStorage.removeItem('admin')
@@ -335,7 +335,7 @@ export const getCurrentAdmin = async (): Promise<Admin | null> => {
   const {
     data: adminData,
     error: adminError
-  } = await supabase
+  } = await supabaseAdmin
     .from('admin')
     .select('admin_id, name, email')
     .eq('email', user.email)
@@ -360,7 +360,7 @@ export const getCurrentAdmin = async (): Promise<Admin | null> => {
 // ==============================
 
 export const logoutAdmin = async () => {
-  await supabase.auth.signOut()
+  await supabaseAdmin.auth.signOut()
   localStorage.removeItem('admin')
 }
 
