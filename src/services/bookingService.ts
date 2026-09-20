@@ -104,7 +104,7 @@ export function isRangeOverlapping(
 
 /**
  * นับจำนวน booking ที่ยัง active อยู่ (ไม่เคยถูกลบ = ยังไม่ถูกยกเลิก) ของรถคันนี้
- * ที่ช่วงวันที่ทับกับช่วงวันที่ที่ระบุ — ใช้เทียบกับ quantity เพื่อดูว่ายังว่างไหม
+ * ที่ช่วงวันที่ทับกับช่วงวันที่ที่ระบุ — ใช้ RPC function เพื่อ bypass RLS
  */
 export async function getOverlappingBookingCount(
   vehicleId: number,
@@ -112,25 +112,24 @@ export async function getOverlappingBookingCount(
   returnDate: string
 ): Promise<number> {
   const { data, error } = await supabase
-    .from('booking')
-    .select('pickup_date, return_date, status')
-    .eq('vehicle_id', vehicleId)
+    .rpc('count_overlapping_bookings', {
+      p_vehicle_id: vehicleId,
+      p_pickup_date: pickupDate,
+      p_return_date: returnDate
+    })
 
   if (error) {
     console.error('getOverlappingBookingCount error:', error.message)
     throw error
   }
 
-  return (data ?? []).filter(
-    (b) =>
-      normalizeStatus(b.status) !== 'ยกเลิก' &&
-      isRangeOverlapping(pickupDate, returnDate, b.pickup_date, b.return_date)
-  ).length
+  return data ?? 0
 }
 
 /**
  * นับจำนวน "การจองชั่วคราว" (hold) ที่ยังไม่หมดอายุ ของรถคันนี้ ที่ช่วงวันที่ทับกัน
  * excludeHoldId ใช้ตอน confirm booking เพื่อไม่นับ hold ของตัวเองซ้ำ
+ * ใช้ RPC function เพื่อ bypass RLS
  */
 export async function getActiveHoldCount(
   vehicleId: number,
@@ -139,21 +138,19 @@ export async function getActiveHoldCount(
   excludeHoldId?: number
 ): Promise<number> {
   const { data, error } = await supabase
-    .from('booking_hold')
-    .select('hold_id, pickup_date, return_date, expires_at')
-    .eq('vehicle_id', vehicleId)
-    .gt('expires_at', new Date().toISOString())
+    .rpc('count_active_holds', {
+      p_vehicle_id: vehicleId,
+      p_pickup_date: pickupDate,
+      p_return_date: returnDate,
+      p_exclude_hold_id: excludeHoldId ?? null
+    })
 
   if (error) {
     console.error('getActiveHoldCount error:', error.message)
     throw error
   }
 
-  return (data ?? []).filter(
-    (h) =>
-      h.hold_id !== excludeHoldId &&
-      isRangeOverlapping(pickupDate, returnDate, h.pickup_date, h.return_date)
-  ).length
+  return data ?? 0
 }
 
 /**
@@ -261,6 +258,21 @@ export async function confirmBooking(input: {
     throw new Error('ช่วงวันที่เลือกเต็มแล้ว กรุณาทำการจองใหม่อีกครั้ง')
   }
 
+  // คำนวณราคา server-side (ไม่เชื่อ client)
+  const { data: priceData, error: priceError } = await supabase
+    .rpc('calc_rental_price', {
+      p_vehicle_id: input.vehicleId,
+      p_pickup_date: input.pickupDate,
+      p_return_date: input.returnDate
+    })
+
+  if (priceError) {
+    console.error('calc_rental_price error:', priceError.message)
+    throw new Error('ไม่สามารถคำนวณราคาได้')
+  }
+
+  const rentalPrice = Number(priceData)
+
   const { data, error } = await supabase
     .from('booking')
     .insert({
@@ -270,7 +282,7 @@ export async function confirmBooking(input: {
       pickup_date: input.pickupDate,
       return_date: input.returnDate,
       deposit_price: 500,
-      rental_price: input.rentalPrice,
+      rental_price: rentalPrice,
       status: 'รออนุมัติ'
     })
     .select('*')
