@@ -3,12 +3,12 @@
 -- Run in Supabase SQL Editor
 -- ============================================================
 
--- Helper function
+-- Helper function - uses JWT email, no auth.users query
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.admin
-    WHERE email = (SELECT email FROM auth.users WHERE id = auth.uid())
+    WHERE email = current_setting('request.jwt.claims', true)::json->>'email'
   );
 $$ LANGUAGE sql SECURITY DEFINER STABLE;
 
@@ -118,4 +118,4 @@ CREATE POLICY "penalty_select_customer" ON penalty FOR SELECT
 
 -- admin
 CREATE POLICY "admin_select_own" ON admin FOR SELECT
-  USING (email = (SELECT email FROM auth.users WHERE id = auth.uid()));
+  USING (email = current_setting('request.jwt.claims', true)::json->>'email');
