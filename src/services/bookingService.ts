@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { supabase, supabaseAdmin } from '../lib/supabase'
 import type { Vehicle } from './customerService'
 
 export interface Customer {
@@ -322,7 +322,7 @@ export async function findOrCreateCustomer(input: {
   phone: string
   email?: string
 }): Promise<Customer> {
-  const { data: existing } = await supabase
+  const { data: existing } = await supabaseAdmin
     .from('customer')
     .select('*')
     .eq('phone', input.phone)
@@ -330,7 +330,7 @@ export async function findOrCreateCustomer(input: {
 
   if (existing) return existing
 
-  const { data: created, error } = await supabase
+  const { data: created, error } = await supabaseAdmin
     .from('customer')
     .insert({
       name: input.name,
