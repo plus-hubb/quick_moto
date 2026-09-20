@@ -272,7 +272,7 @@
               </div>
               <div>
                 <p class="text-xs text-slate-400 mb-0.5">หมวกกันน็อค</p>
-                <p class="font-medium text-slate-900">{{ selectedBooking.delivery_return.helmet_delivery ? 'ส่งมอบครบ' : 'ไม่ได้ให้หมวก' }}</p>
+                <p class="font-medium text-slate-900">{{ (selectedBooking.delivery_return.helmet_delivery ?? 0) > 0 ? selectedBooking.delivery_return.helmet_delivery + ' ใบ' : 'ไม่ได้ให้หมวก' }}</p>
               </div>
               <div class="col-span-2">
                 <p class="text-xs text-slate-400 mb-0.5">ส่งมอบโดย</p>
@@ -310,7 +310,7 @@
               </div>
               <div>
                 <p class="text-xs text-slate-400 mb-0.5">หมวกกันน็อค</p>
-                <p class="font-medium text-slate-900">{{ !selectedBooking.delivery_return.helmet_delivery ? 'ไม่ได้ให้หมวก' : (selectedBooking.delivery_return.helmet_return ? 'ได้คืนครบ' : 'ไม่ครบ') }}</p>
+                <p class="font-medium text-slate-900">{{ !(selectedBooking.delivery_return.helmet_delivery ?? 0) ? 'ไม่ได้ให้หมวก' : (selectedBooking.delivery_return.helmet_return ?? 0) + ' / ' + selectedBooking.delivery_return.helmet_delivery + ' ใบ' }}</p>
               </div>
               <div class="col-span-2">
                 <p class="text-xs text-slate-400 mb-0.5">รับคืนโดย</p>

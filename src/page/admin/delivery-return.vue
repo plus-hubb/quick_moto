@@ -340,18 +340,20 @@
 
               <!-- หมวกกันน็อค (เฉพาะตอนส่งมอบ หรือตอนรับคืนที่ตอนส่งให้หมวก) -->
               <template v-if="isDeliveryMode || selectedBooking?.helmet_delivery">
-                <div class="flex items-center gap-3">
-                  <button
-                    type="button"
-                    @click="helmet = !helmet"
-                    class="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-colors shrink-0"
-                    :class="helmet ? 'bg-[#051329] border-[#051329]' : 'border-slate-300 bg-white'"
-                  >
-                    <i v-if="helmet" class="fa-solid fa-check text-white text-[10px]"></i>
-                  </button>
-                  <span class="text-sm text-slate-700">
-                    {{ isDeliveryMode ? 'ลูกค้ารับหมวกกันน็อค' : 'ได้หมวกกันน็อคคืน' }}
-                  </span>
+                <div>
+                  <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                    {{ isDeliveryMode ? 'จำนวนหมวกกันน็อคที่ให้ (ใบ)' : 'จำนวนหมวกกันน็อคที่ได้คืน (ใบ)' }}
+                  </label>
+                  <p v-if="!isDeliveryMode && selectedBooking?.helmet_delivery" class="text-xs text-slate-400 mb-1">
+                    ส่งมอบให้: <span class="font-medium text-slate-600">{{ selectedBooking.helmet_delivery }} ใบ</span>
+                  </p>
+                  <input
+                    v-model.number="helmet"
+                    type="number"
+                    min="0"
+                    :placeholder="isDeliveryMode ? 'กรอกจำนวนหมวกที่ให้ลูกค้า' : 'กรอกจำนวนหมวกที่ได้คืน'"
+                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+                  />
                 </div>
               </template>
               <template v-else-if="!isDeliveryMode">
@@ -557,12 +559,12 @@ const isLoading = ref(false)
 const isSubmitting = ref(false)
 
 const bookings = ref<BookingWithDetails[]>([])
-const selectedBooking = ref<BookingWithDetails & { delivery_return_id?: number; helmet_delivery?: boolean; mileage_delivery?: number | null; image_delivery_1?: string | null; image_delivery_2?: string | null; image_delivery_3?: string | null } | null>(null)
+const selectedBooking = ref<BookingWithDetails & { delivery_return_id?: number; helmet_delivery?: number; mileage_delivery?: number | null; image_delivery_1?: string | null; image_delivery_2?: string | null; image_delivery_3?: string | null } | null>(null)
 
 const photos = ref<(string | null)[]>([null, null, null])
 const photoFiles = ref<(File | null)>(null)
 const mileage = ref<number | null>(null)
-const helmet = ref(false)
+const helmet = ref(0)
 const licensePlate = ref('')
 const accommodation = ref('')
 
@@ -666,11 +668,11 @@ const loadData = async () => {
   }
 }
 
-const selectBooking = (b: BookingWithDetails & { delivery_return_id?: number; helmet_delivery?: boolean }) => {
+const selectBooking = (b: BookingWithDetails & { delivery_return_id?: number; helmet_delivery?: number }) => {
   selectedBooking.value = b
   photos.value = [null, null, null]
   mileage.value = null
-  helmet.value = false
+  helmet.value = 0
   licensePlate.value = ''
   accommodation.value = ''
   damage.value = false
@@ -752,7 +754,7 @@ const handleSubmit = async () => {
       })
       alert('บันทึกการส่งมอบสำเร็จ!')
     } else {
-      const helmetReturn = selectedBooking.value.helmet_delivery ? helmet.value : false
+      const helmetReturn = selectedBooking.value.helmet_delivery ? helmet.value : 0
       await saveReturn({
         deliveryReturnId: selectedBooking.value.delivery_return_id!,
         bookingId: selectedBooking.value.booking_id,

@@ -14,8 +14,8 @@ export interface DeliveryReturn {
   delivery_time: string | null
   return_date: string | null
   return_time: string | null
-  helmet_delivery: boolean | null
-  helmet_return: boolean | null
+  helmet_delivery: number | null
+  helmet_return: number | null
   mileage_delivery: number | null
   mileage_return: number | null
   delivery_by: string | null
@@ -188,7 +188,7 @@ export async function getPendingDeliveries(): Promise<BookingWithDetails[]> {
 /**
  * ดึงรายการที่ส่งมอบแล้วแต่ยังไม่ได้รับคืน (รอรับคืน)
  */
-export async function getPendingReturns(): Promise<(BookingWithDetails & { delivery_return_id: number; helmet_delivery: boolean; mileage_delivery: number | null; image_delivery_1: string | null; image_delivery_2: string | null; image_delivery_3: string | null })[]> {
+export async function getPendingReturns(): Promise<(BookingWithDetails & { delivery_return_id: number; helmet_delivery: number; mileage_delivery: number | null; image_delivery_1: string | null; image_delivery_2: string | null; image_delivery_3: string | null })[]> {
   const { data: dr, error } = await supabase
     .from('delivery_return')
     .select('delivery_return_id, booking_id, helmet_delivery, mileage_delivery, image_delivery_1, image_delivery_2, image_delivery_3')
@@ -237,7 +237,7 @@ export async function getPendingReturns(): Promise<(BookingWithDetails & { deliv
   return bookings.map(b => ({
     ...b,
     delivery_return_id: drMap.get(b.booking_id)!,
-    helmet_delivery: helmetDeliveryMap.get(b.booking_id) ?? false,
+    helmet_delivery: helmetDeliveryMap.get(b.booking_id) ?? 0,
     mileage_delivery: mileageDeliveryMap.get(b.booking_id) ?? null,
     image_delivery_1: imageDelivery1Map.get(b.booking_id) ?? null,
     image_delivery_2: imageDelivery2Map.get(b.booking_id) ?? null,
@@ -260,7 +260,7 @@ export async function saveDelivery(input: {
   image2: string | null
   image3: string | null
   mileage: number
-  helmet: boolean
+  helmet: number
   licensePlate: string
   accommodation: string
 }): Promise<DeliveryReturn> {
@@ -316,7 +316,7 @@ export async function saveReturn(input: {
   image2: string | null
   image3: string | null
   mileage: number
-  helmet: boolean
+  helmet: number
 }): Promise<DeliveryReturn> {
   const now = new Date()
   const dateStr = now.toISOString().split('T')[0]
