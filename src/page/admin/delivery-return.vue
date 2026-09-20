@@ -357,7 +357,9 @@
                       <input
                         v-model="receiverPhone"
                         type="tel"
-                        placeholder="กรอกเบอร์โทรผู้รับรถ"
+                        maxlength="10"
+                        placeholder="กรอกเบอร์โทรผู้รับรถ (10 หลัก)"
+                        @input="receiverPhone = receiverPhone.replace(/[^0-9]/g, '').slice(0, 10)"
                         class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
                       />
                     </div>
@@ -781,6 +783,10 @@ const handleSubmit = async () => {
   if (!selectedBooking.value || !mileage.value || isSubmitting.value) return
   if (isMileageInvalid.value) return
   if (isHelmetInvalid.value) return
+  if (isDeliveryMode.value && receiverPhone.value && receiverPhone.value.length !== 10) {
+    alert('เบอร์โทรผู้รับรถต้องเป็นตัวเลข 10 หลัก')
+    return
+  }
 
   const confirmed = window.confirm(
     isDeliveryMode.value
