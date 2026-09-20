@@ -238,7 +238,7 @@ export const loginCustomer = async (
 
 
 // ==============================
-// Login Admin
+// Login Admin (ใช้ Supabase Auth)
 // ==============================
 
 export interface Admin {
@@ -263,6 +263,25 @@ export const loginAdmin = async (
     throw new Error('กรุณากรอกรหัสผ่าน')
   }
 
+  // 1. Login ผ่าน Supabase Auth
+  const {
+    data: authData,
+    error: authError
+  } = await supabase.auth.signInWithPassword({
+    email: cleanEmail,
+    password
+  })
+
+  if (authError) {
+    console.error('ADMIN AUTH LOGIN ERROR:', authError)
+    throw new Error('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
+  }
+
+  if (!authData.user) {
+    throw new Error('ไม่พบข้อมูลผู้ใช้งาน')
+  }
+
+  // 2. ดึงข้อมูล admin จากตาราง admin (RLS จะเช็ค email อัตโนมัติ)
   const {
     data: adminData,
     error: adminError
@@ -270,21 +289,18 @@ export const loginAdmin = async (
     .from('admin')
     .select('admin_id, name, email')
     .eq('email', cleanEmail)
-    .eq('password', password)
     .maybeSingle()
 
   if (adminError) {
-    console.error(
-      'ADMIN LOGIN ERROR:',
-      adminError
-    )
-
+    console.error('ADMIN SELECT ERROR:', adminError)
     throw new Error(
       `ตรวจสอบข้อมูลไม่สำเร็จ: ${adminError.message}`
     )
   }
 
   if (!adminData) {
+    // ไม่พบในตาราง admin = ไม่ใช่แอดมิน → sign out แล้วThrow เพื่อให้ caller ลอง login เป็น customer
+    await supabase.auth.signOut()
     throw new Error('NOT_FOUND')
   }
 
@@ -302,15 +318,40 @@ export const loginAdmin = async (
 // ==============================
 
 export const getCurrentAdmin = async (): Promise<Admin | null> => {
-  const raw = localStorage.getItem('admin')
-  if (!raw) return null
+  // 1. เช็ค session จาก Supabase Auth
+  const {
+    data: sessionData,
+    error: sessionError
+  } = await supabase.auth.getSession()
 
-  try {
-    return JSON.parse(raw) as Admin
-  } catch {
+  if (sessionError || !sessionData.session?.user) {
     localStorage.removeItem('admin')
     return null
   }
+
+  const user = sessionData.session.user
+
+  // 2. ดึงข้อมูล admin จากตาราง (RLS จะเช็ค email อัตโนมัติ)
+  const {
+    data: adminData,
+    error: adminError
+  } = await supabase
+    .from('admin')
+    .select('admin_id, name, email')
+    .eq('email', user.email)
+    .maybeSingle()
+
+  if (adminError || !adminData) {
+    localStorage.removeItem('admin')
+    return null
+  }
+
+  localStorage.setItem(
+    'admin',
+    JSON.stringify(adminData)
+  )
+
+  return adminData
 }
 
 
@@ -319,6 +360,7 @@ export const getCurrentAdmin = async (): Promise<Admin | null> => {
 // ==============================
 
 export const logoutAdmin = async () => {
+  await supabase.auth.signOut()
   localStorage.removeItem('admin')
 }
 

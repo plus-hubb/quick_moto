@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { supabase } from '../lib/supabase'
 
 // Import หน้าต่าง ๆ ตามโครงสร้างโฟลเดอร์ในรูป
 import SignupView from '../page/signup.vue'
@@ -134,16 +135,51 @@ const router = createRouter({
 })
 
 // ==============================
-// Route Guard — กัน customer เข้าหน้า admin
+// Route Guard — ป้องกันทุกหน้าที่ต้อง login
 // ==============================
 
-router.beforeEach((to) => {
-  const isAdminRoute = to.path.startsWith('/admin')
+// หน้าที่ไม่ต้อง login (public)
+const publicRoutes = ['signup', 'signin']
 
-  if (isAdminRoute) {
-    const admin = localStorage.getItem('admin')
+// หน้าที่ต้อง login เป็นแอดมิน
+const adminRoutes = [
+  'admin-dashboard',
+  'admin-pending-approval',
+  'admin-vehicles',
+  'admin-delivery',
+  'admin-return',
+  'admin-cancellations',
+  'admin-rental-history',
+  'admin-revenue',
+  'admin-walk-in-booking',
+]
 
-    if (!admin) {
+router.beforeEach(async (to) => {
+  // หน้า public — ผ่านได้เลย
+  if (publicRoutes.includes(to.name as string)) {
+    return
+  }
+
+  // เช็ค Supabase session
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // ไม่มี session = ต้อง login ก่อน
+  if (!session) {
+    return { name: 'signin' }
+  }
+
+  // ถ้าเป็นหน้าแอดมิน — เช็คว่ามี admin record ใน DB จริง
+  if (adminRoutes.includes(to.name as string)) {
+    const { data: adminData } = await supabase
+      .from('admin')
+      .select('admin_id')
+      .eq('email', session.user.email)
+      .maybeSingle()
+
+    if (!adminData) {
+      // ไม่ใช่แอดมิน — sign out แล้วกลับ signin
+      await supabase.auth.signOut()
+      localStorage.removeItem('admin')
       return { name: 'signin' }
     }
   }
