@@ -317,6 +317,40 @@
                 />
               </div>
 
+              <!-- ข้อมูลผู้รับรถ (เฉพาะตอนส่งมอบ) -->
+              <template v-if="isDeliveryMode">
+                <div class="border-t border-slate-100 pt-4 mt-4">
+                  <p class="text-xs text-slate-400 mb-3">
+                    <i class="fa-solid fa-user-check mr-1"></i>
+                    ข้อมูลผู้รับรถ <span class="text-slate-300">(กรณีคนมารับรถไม่ใช่คนจอง)</span>
+                  </p>
+                  <div class="space-y-3">
+                    <div>
+                      <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                        ชื่อผู้รับรถ
+                      </label>
+                      <input
+                        v-model="receiverName"
+                        type="text"
+                        placeholder="กรอกชื่อ-นามสกุล ผู้รับรถ"
+                        class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-slate-700 mb-1.5">
+                        เบอร์โทรผู้รับรถ
+                      </label>
+                      <input
+                        v-model="receiverPhone"
+                        type="tel"
+                        placeholder="กรอกเบอร์โทรผู้รับรถ"
+                        class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 transition-all"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </template>
+
               <!-- เลขไมล์ -->
               <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1.5">
@@ -571,6 +605,8 @@ const mileage = ref<number | null>(null)
 const helmet = ref(0)
 const licensePlate = ref('')
 const accommodation = ref('')
+const receiverName = ref('')
+const receiverPhone = ref('')
 
 const damage = ref(false)
 const damageFee = ref<number>(0)
@@ -687,6 +723,8 @@ const selectBooking = (b: BookingWithDetails & { delivery_return_id?: number; he
   helmet.value = 0
   licensePlate.value = ''
   accommodation.value = ''
+  receiverName.value = ''
+  receiverPhone.value = ''
   damage.value = false
   damageFee.value = 0
   damageNote.value = ''
@@ -765,7 +803,9 @@ const handleSubmit = async () => {
         mileage: mileage.value,
         helmet: helmet.value,
         licensePlate: licensePlate.value,
-        accommodation: accommodation.value
+        accommodation: accommodation.value,
+        receiverName: receiverName.value,
+        receiverPhone: receiverPhone.value
       })
       alert('บันทึกการส่งมอบสำเร็จ!')
     } else {

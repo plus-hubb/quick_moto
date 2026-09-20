@@ -24,6 +24,8 @@ export interface DeliveryReturn {
   mileage_return: number | null
   delivery_by: string | null
   return_by: string | null
+  receiver_name: string | null
+  receiver_phone: string | null
 }
 
 export interface BookingWithDetails {
@@ -273,6 +275,8 @@ export async function saveDelivery(input: {
   helmet: number
   licensePlate: string
   accommodation: string
+  receiverName: string
+  receiverPhone: string
 }): Promise<DeliveryReturn> {
   const now = new Date()
   const dateStr = now.toISOString().split('T')[0]
@@ -294,7 +298,9 @@ export async function saveDelivery(input: {
       delivery_time: timeStr,
       helmet_delivery: input.helmet,
       mileage_delivery: input.mileage,
-      delivery_by: adminData.name ?? ''
+      delivery_by: adminData.name ?? '',
+      receiver_name: input.receiverName || null,
+      receiver_phone: input.receiverPhone || null
     })
     .select('*')
     .single()
