@@ -466,7 +466,7 @@ export async function getCancelledBookings(): Promise<(BookingWithDetails & { pa
  * ดึงข้อมูลการชำระเงินของ booking
  */
 export async function getPaymentByBookingId(bookingId: number): Promise<{ payment_slip: string | null } | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('payment')
     .select('payment_slip')
     .eq('booking_id', bookingId)

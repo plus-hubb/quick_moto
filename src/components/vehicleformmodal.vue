@@ -151,7 +151,7 @@
 import { ref, reactive } from 'vue'
 import { createVehicle, updateVehicle, type VehicleFormData } from '../services/adminvehicleservice'
 import type { Vehicle } from '../services/customerService'
-import { supabase } from '../lib/supabase'
+import { supabaseAdmin } from '../lib/supabase'
 
 const props = defineProps<{
   mode: 'create' | 'edit'
@@ -211,13 +211,13 @@ const handleSubmit = async () => {
     // อัพโหลดรูปใหม่ถ้ามีไฟล์ที่เลือก
     if (selectedFile.value) {
       const filePath = `vehicle/${Date.now()}-${selectedFile.value.name}`
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabaseAdmin.storage
         .from('qrick_moto_img')
         .upload(filePath, selectedFile.value)
 
       if (uploadError) throw new Error('อัพโหลดรูปภาพไม่สำเร็จ: ' + uploadError.message)
 
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = supabaseAdmin.storage
         .from('qrick_moto_img')
         .getPublicUrl(filePath)
 
@@ -227,7 +227,7 @@ const handleSubmit = async () => {
       if (props.mode === 'edit' && props.vehicle?.image) {
         const oldPath = extractStoragePath(props.vehicle.image)
         if (oldPath) {
-          await supabase.storage.from('qrick_moto_img').remove([oldPath])
+          await supabaseAdmin.storage.from('qrick_moto_img').remove([oldPath])
         }
       }
     }
