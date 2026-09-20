@@ -239,7 +239,7 @@
               ฉันยอมรับ
               <a
                 href="#"
-                @click.prevent
+                @click.prevent="showTerms = true"
                 class="underline font-medium hover:text-slate-900"
               >
                 เงื่อนไขการให้บริการ
@@ -292,6 +292,93 @@
         </RouterLink>
       </div>
     </div>
+
+    <!-- Terms of Service Modal -->
+    <Teleport to="body">
+      <div v-if="showTerms" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="showTerms = false">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col z-10">
+          <div class="flex items-center justify-between p-5 border-b border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900">เงื่อนไขการให้บริการ</h3>
+            <button @click="showTerms = false" class="text-slate-400 hover:text-slate-600 transition-colors">
+              <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+          </div>
+          <div class="p-5 overflow-y-auto text-sm text-slate-600 leading-relaxed space-y-4">
+            <p class="text-xs text-slate-400">กรุณาอ่านและทำความเข้าใจเงื่อนไขการให้บริการก่อนทำการจองรถจักรยานยนต์ผ่านระบบ Quick Moto</p>
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">1. การจองรถ</h4>
+              <ul class="list-disc pl-4 space-y-0.5">
+                <li>ผู้เช่าสามารถเลือกวันที่รับรถ วันที่คืนรถ และรถที่ต้องการเช่าผ่านระบบ</li>
+                <li>ผู้เช่าต้องกรอกข้อมูลสำหรับการจอง ได้แก่ ชื่อผู้เช่าและเบอร์โทรศัพท์</li>
+                <li>การจองจะต้องชำระค่ามัดจำจำนวน 500 บาท เพื่อยืนยันการจอง</li>
+                <li>การจองจะมีผลเมื่อร้านตรวจสอบข้อมูลและอนุมัติการจองเรียบร้อยแล้ว</li>
+                <li>หากเกิดกรณีรถที่จองไว้ไม่สามารถให้บริการได้ ร้านสามารถเปลี่ยนเป็นรถรุ่นเดียวกันให้ หรือหากไม่มีรถรุ่นเดียวกัน สามารถเปลี่ยนเป็นรถที่ดีกว่าโดยคิดราคาเท่าเดิม</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">2. การชำระเงิน</h4>
+              <ul class="list-disc pl-4 space-y-0.5">
+                <li>ผู้เช่าต้องชำระค่ามัดจำการจองจำนวน 500 บาทตามที่ระบบกำหนด</li>
+                <li>ผู้เช่าต้องแนบหลักฐานการชำระเงินผ่านระบบ</li>
+                <li>ค่าเช่ารถส่วนที่เหลือชำระที่ร้านในขั้นตอนการทำสัญญาเช่า</li>
+                <li>ผู้เช่าควรตรวจสอบจำนวนเงินและรายละเอียดการจองก่อนยืนยันการชำระเงิน</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">3. การรับรถ</h4>
+              <ul class="list-disc pl-4 space-y-0.5">
+                <li>ผู้เช่าต้องมารับรถภายในวันที่กำหนดและภายในเวลาทำการของร้าน</li>
+                <li>ผู้เช่าต้องเตรียมบัตรประชาชน ใบขับขี่ สำหรับการเช่า</li>
+                <li>ก่อนส่งมอบรถ จะมีการตรวจสอบและบันทึกสภาพรถ ได้แก่ รอยขีดข่วน ระดับน้ำมัน และเลขไมล์</li>
+                <li>ผู้เช่าควรตรวจสอบสภาพรถก่อนนำรถออกจากร้าน หากพบความผิดปกติควรแจ้งให้ร้านทราบทันที</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">4. การคืนรถ</h4>
+              <ul class="list-disc pl-4 space-y-0.5">
+                <li>ผู้เช่าต้องคืนรถตามวันที่และเวลาที่กำหนดในการจอง</li>
+                <li>เมื่อคืนรถ ทางร้านจะตรวจสอบระดับน้ำมัน ความเสียหาย และเลขไมล์</li>
+                <li>หากคืนรถล่าช้า จะมีค่าปรับในอัตรา 50 บาทต่อชั่วโมง</li>
+                <li>กรณีพบความเสียหายของรถ ทางร้านจะดำเนินการตามเงื่อนไขและความรับผิดชอบที่กำหนด</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">5. การยกเลิกการจอง</h4>
+              <ul class="list-disc pl-4 space-y-0.5">
+                <li>ผู้เช่าสามารถยกเลิกการจองได้ตามเงื่อนไขของระบบ</li>
+                <li>กรณียกเลิกการจอง ทางร้านไม่มีนโยบายคืนเงินค่ามัดจำการจอง</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">6. ความเสียหายของรถ</h4>
+              <ul class="list-disc pl-4 space-y-0.5">
+                <li>กรณีรถเกิดความเสียหายบริเวณยาง ผู้เช่าต้องรับผิดชอบค่าใช้จ่ายที่เกิดขึ้น</li>
+                <li>หากรถเกิดความเสียหายในกรณีอื่น ร้านจะพิจารณาดำเนินการเปลี่ยนรถให้ตามเงื่อนไขของร้าน</li>
+                <li>ผู้เช่าต้องแจ้งร้านทันทีเมื่อเกิดความเสียหายหรือเหตุผิดปกติกับรถ</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">7. กรณีเกิดอุบัติเหตุ</h4>
+              <ul class="list-disc pl-4 space-y-0.5">
+                <li>หากเกิดอุบัติเหตุระหว่างการเช่า ผู้เช่าต้องแจ้งให้ทางร้านทราบ</li>
+                <li>ผู้เช่าต้องรับผิดชอบค่าเสียหายตามเงื่อนไขของร้าน</li>
+                <li>กรณีที่สามารถใช้สิทธิ์ประกันจาก พ.ร.บ. รถได้ สามารถดำเนินการเบิกประกันตามกรณี</li>
+              </ul>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">8. การยอมรับเงื่อนไข</h4>
+              <p>การทำรายการจองผ่านระบบ Quick Moto ถือว่าผู้เช่าได้อ่าน ทำความเข้าใจ และยอมรับเงื่อนไขการให้บริการที่กำหนดไว้ทั้งหมดแล้ว</p>
+            </div>
+          </div>
+          <div class="p-5 border-t border-slate-200">
+            <button @click="showTerms = false" class="w-full bg-[#051329] hover:bg-[#0a1f3d] text-white font-medium py-2.5 px-4 rounded-xl transition-all">
+              ปิด
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- Privacy Policy Modal -->
     <Teleport to="body">
@@ -370,6 +457,7 @@ const showConfirmPassword = ref(false)
 const isLoading = ref(false)
 const imageError = ref(false)
 const showPrivacyPolicy = ref(false)
+const showTerms = ref(false)
 
 // ==============================
 // Signup
