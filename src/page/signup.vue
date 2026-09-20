@@ -247,7 +247,7 @@
               และ
               <a
                 href="#"
-                @click.prevent
+                @click.prevent="showPrivacyPolicy = true"
                 class="underline font-bold text-slate-900"
               >
                 นโยบายความเป็นส่วนตัว
@@ -292,6 +292,52 @@
         </RouterLink>
       </div>
     </div>
+
+    <!-- Privacy Policy Modal -->
+    <Teleport to="body">
+      <div v-if="showPrivacyPolicy" class="fixed inset-0 z-50 flex items-center justify-center p-4" @click.self="showPrivacyPolicy = false">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+        <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col z-10">
+          <div class="flex items-center justify-between p-5 border-b border-slate-200">
+            <h3 class="text-lg font-bold text-slate-900">นโยบายความเป็นส่วนตัว</h3>
+            <button @click="showPrivacyPolicy = false" class="text-slate-400 hover:text-slate-600 transition-colors">
+              <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+          </div>
+          <div class="p-5 overflow-y-auto text-sm text-slate-600 leading-relaxed space-y-4">
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">1. การเก็บรวบรวมข้อมูล</h4>
+              <p>เราเก็บรวบรวมข้อมูลส่วนบุคคลของท่าน ได้แก่ ชื่อ-นามสกุล อีเมล เบอร์โทรศัพท์ หมายเลขบัตรประชาชน และใบอนุญาตขับขี่ เมื่อท่านสมัครสมาชิกหรือทำรายการเช่ารถผ่านระบบ</p>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">2. การใช้ข้อมูล</h4>
+              <p>ข้อมูลของท่านจะถูกนำไปใช้เพื่อวัตถุประสงค์ในการยืนยันตัวตน ดำเนินการเช่ารถ ติดต่อสื่อสาร และอำนวยความสะดวกในการให้บริการของร้าน</p>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">3. การเปิดเผยข้อมูล</h4>
+              <p>เราจะไม่เปิดเผยข้อมูลส่วนบุคคลของท่านให้แก่บุคคลภายนอก เว้นแต่กรณีที่กฎหมายกำหนด หรือได้รับความยินยอมจากท่าน</p>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">4. การรักษาความปลอดภัยของข้อมูล</h4>
+              <p>เราใช้มาตรการรักษาความปลอดภัยที่เหมาะสมเพื่อป้องกันการเข้าถึง ใช้ แก้ไข หรือเปิดเผยข้อมูลส่วนบุคคลโดยไม่ได้รับอนุญาต</p>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">5. สิทธิของเจ้าของข้อมูล</h4>
+              <p>ท่านมีสิทธิ์ขอเข้าถึง แก้ไข หรือลบข้อมูลส่วนบุคคลของท่านได้ตลอดเวลา โดยติดต่อร้านโดยตรง</p>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-900 mb-1">6. การติดต่อ</h4>
+              <p>หากท่านมีคำถามเกี่ยวกับนโยบายความเป็นส่วนตัว กรุณาติดต่อร้าน Quick Moto ผ่านช่องทางที่ระบุในหน้าติดต่อร้าน</p>
+            </div>
+          </div>
+          <div class="p-5 border-t border-slate-200">
+            <button @click="showPrivacyPolicy = false" class="w-full bg-[#051329] hover:bg-[#0a1f3d] text-white font-medium py-2.5 px-4 rounded-xl transition-all">
+              ปิด
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -323,6 +369,7 @@ const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const isLoading = ref(false)
 const imageError = ref(false)
+const showPrivacyPolicy = ref(false)
 
 // ==============================
 // Signup
