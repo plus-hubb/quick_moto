@@ -169,11 +169,16 @@ router.beforeEach(async (to) => {
     }
 
     // เช็คว่ามี admin record ใน DB จริง
-    const { data: adminData } = await supabaseAdmin
+    const { data: adminData, error: adminError } = await supabaseAdmin
       .from('admin')
       .select('admin_id')
       .eq('email', session.user.email)
       .maybeSingle()
+
+    if (adminError) {
+      // DB error ชั่วคราว (เช่น RLS/JWT ยังไม่พร้อม) → ให้ผ่านก่อน อย่า force logout
+      return
+    }
 
     if (!adminData) {
       await supabaseAdmin.auth.signOut()
