@@ -402,6 +402,12 @@ const loadBooking = async () => {
 
 const handleCancelBooking = async () => {
   if (!booking.value) return
+
+  const confirmed = window.confirm(
+    'หากย้อนกลับ การจองจะถูกยกเลิกและรถจะกลับไปว่างทันที\n⚠️ การยกเลิกไม่มีการคืนเงินค่ามัดจำ\n\nหากต้องการเปลี่ยนวันที่จอง โปรดติดต่อร้านโดยตรง\n\nต้องการดำเนินการต่อหรือไม่?'
+  )
+  if (!confirmed) return
+
   showCancelModal.value = true
 }
 
