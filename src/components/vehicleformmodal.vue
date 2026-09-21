@@ -44,7 +44,7 @@
             <input
               v-model.number="form.price"
               type="number"
-              min="0"
+              min="1"
               step="0.01"
               required
               class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
@@ -205,6 +205,12 @@ const removeImage = () => {
 
 const handleSubmit = async () => {
   errorMessage.value = ''
+
+  if (!form.price || form.price <= 0) {
+    errorMessage.value = 'กรุณาระบุราคาต่อวันที่มากกว่า 0'
+    return
+  }
+
   isSubmitting.value = true
 
   try {
