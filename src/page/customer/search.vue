@@ -89,6 +89,14 @@
         </button>
       </div>
 
+      <!-- Disclaimer -->
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 flex items-start gap-2.5">
+        <i class="fa-solid fa-circle-info text-amber-500 mt-0.5 text-sm shrink-0"></i>
+        <p class="text-xs text-amber-700 leading-relaxed">
+          สีรถที่ได้รับจริงอาจแตกต่างจากในรูปภาพ ขึ้นอยู่กับรถที่มีอยู่ในคลังขณะรับรถ
+        </p>
+      </div>
+
       <!-- Results -->
       <div class="flex items-center justify-between mb-3">
         <h2 class="text-sm font-bold text-slate-900">
