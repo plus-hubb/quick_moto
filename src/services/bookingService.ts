@@ -31,6 +31,8 @@ export interface Payment {
   booking_id: number
   payment_datetime: string
   payment_slip: string | null
+  transfer_name: string | null
+  bank_name: string | null
 }
 
 export interface BookingHold {
@@ -463,12 +465,16 @@ export async function cancelBookingRecord(bookingId: number, cancelNote?: string
 export async function createPayment(input: {
   bookingId: number
   slipUrl: string
+  transferName?: string
+  bankName?: string
 }): Promise<Payment> {
   const { data, error } = await supabase
     .from('payment')
     .insert({
       booking_id: input.bookingId,
-      payment_slip: input.slipUrl
+      payment_slip: input.slipUrl,
+      transfer_name: input.transferName ?? null,
+      bank_name: input.bankName ?? null
     })
     .select('*')
     .single()
@@ -484,10 +490,17 @@ export async function createPayment(input: {
 export async function updatePaymentSlip(input: {
   bookingId: number
   slipUrl: string
+  transferName?: string
+  bankName?: string
 }): Promise<Payment> {
   const { data, error } = await supabase
     .from('payment')
-    .update({ payment_slip: input.slipUrl, payment_datetime: new Date().toISOString() })
+    .update({
+      payment_slip: input.slipUrl,
+      payment_datetime: new Date().toISOString(),
+      transfer_name: input.transferName ?? null,
+      bank_name: input.bankName ?? null
+    })
     .eq('booking_id', input.bookingId)
     .select('*')
 
@@ -498,7 +511,7 @@ export async function updatePaymentSlip(input: {
 
   if (!data || data.length === 0) {
     // ไม่มี row ที่ update ได้ — ลอง insert ใหม่แทน
-    return createPayment({ bookingId: input.bookingId, slipUrl: input.slipUrl })
+    return createPayment({ bookingId: input.bookingId, slipUrl: input.slipUrl, transferName: input.transferName, bankName: input.bankName })
   }
 
   return data[0]

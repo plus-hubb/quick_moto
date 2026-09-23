@@ -234,6 +234,19 @@
               />
             </div>
             <p v-if="slipError" class="text-xs text-red-500 mt-2">{{ slipError }}</p>
+            <div
+              v-if="transferName || bankName"
+              class="grid grid-cols-2 gap-4 text-sm mt-4 pt-4 border-t border-slate-100"
+            >
+              <div>
+                <p class="text-xs text-slate-400 mb-0.5">ชื่อบัญชีผู้โอน</p>
+                <p class="font-medium text-slate-900">{{ transferName ?? '-' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-slate-400 mb-0.5">ธนาคาร</p>
+                <p class="font-medium text-slate-900">{{ bankName ?? '-' }}</p>
+              </div>
+            </div>
           </div>
 
           <div v-if="selectedBooking && !paymentSlip && !slipLoading" class="bg-white rounded-2xl border border-slate-100 p-5 mb-4">
@@ -338,6 +351,8 @@ const isProcessing = ref(false)
 const bookings = ref<BookingWithDetails[]>([])
 const selectedBooking = ref<BookingWithDetails | null>(null)
 const paymentSlip = ref<string | null>(null)
+const transferName = ref<string | null>(null)
+const bankName = ref<string | null>(null)
 const slipError = ref('')
 const slipLoading = ref(false)
 const searchKeyword = ref('')
@@ -374,6 +389,8 @@ const loadData = async () => {
 const selectBooking = async (b: BookingWithDetails) => {
   selectedBooking.value = b
   paymentSlip.value = null
+  transferName.value = null
+  bankName.value = null
   slipError.value = ''
   slipLoading.value = true
 
@@ -382,6 +399,8 @@ const selectBooking = async (b: BookingWithDetails) => {
     if (payment && payment.payment_slip) {
       paymentSlip.value = payment.payment_slip
     }
+    transferName.value = payment?.transfer_name ?? null
+    bankName.value = payment?.bank_name ?? null
   } catch (err) {
     console.error('Error fetching payment slip:', err)
   } finally {

@@ -415,7 +415,7 @@ export async function uploadImage(file: File): Promise<string> {
 /**
  * ดึงรายการจองสถานะ "ยกเลิก"
  */
-export async function getCancelledBookings(): Promise<(BookingWithDetails & { payment_slip: string | null })[]> {
+export async function getCancelledBookings(): Promise<(BookingWithDetails & { payment_slip: string | null; transfer_name: string | null; bank_name: string | null })[]> {
   const { data: bookings, error } = await supabaseAdmin
     .from('booking')
     .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate, accommodation')
@@ -436,7 +436,7 @@ export async function getCancelledBookings(): Promise<(BookingWithDetails & { pa
   const [customersRes, vehiclesRes, paymentsRes] = await Promise.all([
     supabaseAdmin.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
     supabaseAdmin.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds),
-    supabaseAdmin.from('payment').select('booking_id, payment_slip').in('booking_id', bookingIds).order('payment_id', { ascending: true })
+    supabaseAdmin.from('payment').select('booking_id, payment_slip, transfer_name, bank_name').in('booking_id', bookingIds).order('payment_id', { ascending: true })
   ])
 
   if (paymentsRes.error) {
@@ -445,7 +445,7 @@ export async function getCancelledBookings(): Promise<(BookingWithDetails & { pa
 
   const customerMap = new Map((customersRes.data ?? []).map(c => [c.customer_id, c]))
   const vehicleMap = new Map((vehiclesRes.data ?? []).map(v => [v.vehicle_id, v]))
-  const paymentMap = new Map((paymentsRes.data ?? []).map(p => [p.booking_id, p.payment_slip]))
+  const paymentMap = new Map((paymentsRes.data ?? []).map(p => [p.booking_id, p]))
 
   return bookings.map(b => ({
     ...b,
@@ -454,7 +454,9 @@ export async function getCancelledBookings(): Promise<(BookingWithDetails & { pa
     vehicle_brand: vehicleMap.get(b.vehicle_id)?.brand ?? '-',
     vehicle_model: vehicleMap.get(b.vehicle_id)?.model ?? '-',
     vehicle_image: vehicleMap.get(b.vehicle_id)?.image ?? null,
-    payment_slip: paymentMap.get(b.booking_id) ?? null
+    payment_slip: paymentMap.get(b.booking_id)?.payment_slip ?? null,
+    transfer_name: paymentMap.get(b.booking_id)?.transfer_name ?? null,
+    bank_name: paymentMap.get(b.booking_id)?.bank_name ?? null
   }))
 }
 
@@ -465,10 +467,10 @@ export async function getCancelledBookings(): Promise<(BookingWithDetails & { pa
 /**
  * ดึงข้อมูลการชำระเงินของ booking
  */
-export async function getPaymentByBookingId(bookingId: number): Promise<{ payment_slip: string | null } | null> {
+export async function getPaymentByBookingId(bookingId: number): Promise<{ payment_slip: string | null; transfer_name: string | null; bank_name: string | null } | null> {
   const { data, error } = await supabaseAdmin
     .from('payment')
-    .select('payment_slip')
+    .select('payment_slip, transfer_name, bank_name')
     .eq('booking_id', bookingId)
     .order('payment_id', { ascending: false })
     .limit(1)
@@ -490,6 +492,8 @@ export interface CompletedBooking extends BookingWithDetails {
   delivery_return: DeliveryReturn | null
   penalty: Penalty | null
   payment_slip: string | null
+  transfer_name: string | null
+  bank_name: string | null
 }
 
 /**
@@ -518,14 +522,14 @@ export async function getCompletedBookings(): Promise<CompletedBooking[]> {
     supabaseAdmin.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds),
     supabaseAdmin.from('delivery_return').select('*').in('booking_id', bookingIds),
     supabaseAdmin.from('penalty').select('*').in('booking_id', bookingIds),
-    supabaseAdmin.from('payment').select('booking_id, payment_slip').in('booking_id', bookingIds).order('payment_id', { ascending: true })
+    supabaseAdmin.from('payment').select('booking_id, payment_slip, transfer_name, bank_name').in('booking_id', bookingIds).order('payment_id', { ascending: true })
   ])
 
   const customerMap = new Map((customersRes.data ?? []).map(c => [c.customer_id, c]))
   const vehicleMap = new Map((vehiclesRes.data ?? []).map(v => [v.vehicle_id, v]))
   const drMap = new Map((drRes.data ?? []).map(dr => [dr.booking_id, dr]))
   const penaltyMap = new Map((penaltyRes.data ?? []).map(p => [p.booking_id, p]))
-  const paymentMap = new Map((paymentRes.data ?? []).map(p => [p.booking_id, p.payment_slip]))
+  const paymentMap = new Map((paymentRes.data ?? []).map(p => [p.booking_id, p]))
 
   return bookings.map(b => ({
     ...b,
@@ -536,7 +540,9 @@ export async function getCompletedBookings(): Promise<CompletedBooking[]> {
     vehicle_image: vehicleMap.get(b.vehicle_id)?.image ?? null,
     delivery_return: drMap.get(b.booking_id) ?? null,
     penalty: penaltyMap.get(b.booking_id) ?? null,
-    payment_slip: paymentMap.get(b.booking_id) ?? null
+    payment_slip: paymentMap.get(b.booking_id)?.payment_slip ?? null,
+    transfer_name: paymentMap.get(b.booking_id)?.transfer_name ?? null,
+    bank_name: paymentMap.get(b.booking_id)?.bank_name ?? null
   }))
 }
 

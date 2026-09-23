@@ -251,6 +251,19 @@
               />
             </div>
             <p v-if="slipImageError" class="text-xs text-red-500 mt-2">ไม่สามารถโหลดรูปสลิปได้</p>
+            <div
+              v-if="selectedBooking.transfer_name || selectedBooking.bank_name"
+              class="grid grid-cols-2 gap-4 text-sm mt-4 pt-4 border-t border-slate-100"
+            >
+              <div>
+                <p class="text-xs text-slate-400 mb-0.5">ชื่อบัญชีผู้โอน</p>
+                <p class="font-medium text-slate-900">{{ selectedBooking.transfer_name ?? '-' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-slate-400 mb-0.5">ธนาคาร</p>
+                <p class="font-medium text-slate-900">{{ selectedBooking.bank_name ?? '-' }}</p>
+              </div>
+            </div>
           </div>
 
           <!-- รายละเอียดการส่งมอบ -->

@@ -247,6 +247,19 @@
               />
             </div>
             <p v-if="slipImageError" class="text-xs text-red-500 mt-2">ไม่สามารถโหลดรูปสลิปได้</p>
+            <div
+              v-if="selectedBooking.transfer_name || selectedBooking.bank_name"
+              class="grid grid-cols-2 gap-4 text-sm mt-4 pt-4 border-t border-slate-100"
+            >
+              <div>
+                <p class="text-xs text-slate-400 mb-0.5">ชื่อบัญชีผู้โอน</p>
+                <p class="font-medium text-slate-900">{{ selectedBooking.transfer_name ?? '-' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-slate-400 mb-0.5">ธนาคาร</p>
+                <p class="font-medium text-slate-900">{{ selectedBooking.bank_name ?? '-' }}</p>
+              </div>
+            </div>
           </div>
 
           <div v-if="selectedBooking && !selectedBooking.payment_slip" class="bg-white rounded-2xl border border-slate-100 p-5">
@@ -275,8 +288,8 @@ const isSidebarOpen = ref(false)
 const admin = ref<{ admin_id: number; name: string; email: string } | null>(null)
 const isLoading = ref(false)
 
-const bookings = ref<(BookingWithDetails & { payment_slip: string | null })[]>([])
-const selectedBooking = ref<(BookingWithDetails & { payment_slip: string | null }) | null>(null)
+const bookings = ref<(BookingWithDetails & { payment_slip: string | null; transfer_name: string | null; bank_name: string | null })[]>([])
+const selectedBooking = ref<(BookingWithDetails & { payment_slip: string | null; transfer_name: string | null; bank_name: string | null }) | null>(null)
 const slipImageError = ref(false)
 const searchKeyword = ref('')
 
@@ -326,7 +339,7 @@ const loadData = async () => {
   }
 }
 
-const selectBooking = (b: BookingWithDetails & { payment_slip: string | null }) => {
+const selectBooking = (b: BookingWithDetails & { payment_slip: string | null; transfer_name: string | null; bank_name: string | null }) => {
   selectedBooking.value = b
   slipImageError.value = false
 }

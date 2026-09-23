@@ -78,6 +78,46 @@
           <p class="text-xs text-slate-400 mt-2">สามารถกดปุ่มด้านล่างเพื่ออัพโหลดสลิปใหม่ได้</p>
         </div>
 
+        <!-- ข้อมูลผู้โอน / ธนาคาร -->
+        <div v-if="!slipUploaded" class="text-left bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 space-y-4">
+          <div>
+            <label for="transferName" class="block text-sm font-medium text-slate-700 mb-1.5">ชื่อบัญชีผู้โอน</label>
+            <input
+              id="transferName"
+              v-model="transferName"
+              type="text"
+              placeholder="เช่น สมชาย ใจดี"
+              autocomplete="off"
+              class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
+            >
+          </div>
+
+          <div>
+            <label for="bankName" class="block text-sm font-medium text-slate-700 mb-1.5">ธนาคาร</label>
+            <select
+              id="bankName"
+              v-model="selectedBank"
+              class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
+            >
+              <option value="" disabled>เลือกธนาคาร</option>
+              <option v-for="bank in bankOptions" :key="bank" :value="bank">{{ bank }}</option>
+              <option value="อื่นๆ">อื่นๆ (กรอกเอง)</option>
+            </select>
+          </div>
+
+          <div v-if="selectedBank === 'อื่นๆ'">
+            <label for="customBankName" class="block text-sm font-medium text-slate-700 mb-1.5">ระบุชื่อธนาคาร</label>
+            <input
+              id="customBankName"
+              v-model="customBankName"
+              type="text"
+              placeholder="พิมพ์ชื่อธนาคาร"
+              autocomplete="off"
+              class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-slate-800 focus:bg-white transition-all"
+            >
+          </div>
+        </div>
+
         <div class="space-y-3">
           <button
             type="button"
@@ -132,6 +172,37 @@ const slipUploaded = ref(false)
 const isUploading = ref(false)
 const slipUrl = ref<string | null>(null)
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const transferName = ref('')
+const selectedBank = ref('')
+const customBankName = ref('')
+
+const bankOptions = [
+  'ธนาคารกรุงเทพ จำกัด (มหาชน)',
+  'ธนาคารกสิกรไทย จำกัด (มหาชน)',
+  'ธนาคารกรุงไทย จำกัด (มหาชน)',
+  'ธนาคารไทยพาณิชย์ จำกัด (มหาชน)',
+  'ธนาคารกรุงศรีอยุธยา จำกัด (มหาชน)',
+  'ธนาคารทหารไทยธนชาต จำกัด (มหาชน) (ttb)',
+  'ธนาคารซีไอเอ็มบี ไทย จำกัด (มหาชน)',
+  'ธนาคารเกียรตินาคินภัทร จำกัด (มหาชน)',
+  'ธนาคารทิสโก้ จำกัด (มหาชน)',
+  'ธนาคารยูโอบี จำกัด (มหาชน)',
+  'ธนาคารแลนด์ แอนด์ เฮ้าส์ จำกัด (มหาชน)',
+  'ธนาคารไอซีบีซี (ไทย) จำกัด (มหาชน)',
+  'ธนาคารไทยเครดิต จำกัด (มหาชน)',
+  'ธนาคารเมกะ สากลพาณิชย์ จำกัด (มหาชน)',
+  'ธนาคารแห่งประเทศจีน (ไทย) จำกัด (มหาชน)',
+  'ธนาคารออมสิน',
+  'ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (ธ.ก.ส.)',
+  'ธนาคารอาคารสงเคราะห์ (ธอส.)',
+  'ธนาคารอิสลามแห่งประเทศไทย',
+  'ธนาคารเพื่อการส่งออกและนำเข้าแห่งประเทศไทย (Exim Bank)',
+  'ธนาคารพัฒนาวิสาหกิจขนาดกลางและขนาดย่อมแห่งประเทศไทย (SME D Bank)'
+] as const
+
+const resolvedBankName = computed(() =>
+  selectedBank.value === 'อื่นๆ' ? customBankName.value.trim() : selectedBank.value
+)
 
 // booking_id / booking_code จะมีค่าก็ต่อเมื่อ insert booking สำเร็จแล้วเท่านั้น (หลังแนบสลิป)
 const createdBookingId = ref<number | null>(null)
@@ -192,6 +263,17 @@ const handleFileSelected = async (event: Event) => {
   const file = input.files?.[0]
   if (!file || !draft.value) return
 
+  const name = transferName.value.trim()
+  const bank = resolvedBankName.value
+  if (!name) {
+    alert('กรุณากรอกชื่อบัญชีผู้โอน')
+    return
+  }
+  if (bank === 'อื่นๆ' || !bank) {
+    alert('กรุณากรอกชื่อธนาคาร (หากเลือก อื่นๆ ต้องพิมพ์ชื่อธนาคาร)')
+    return
+  }
+
   isUploading.value = true
 
   try {
@@ -210,7 +292,9 @@ const handleFileSelected = async (event: Event) => {
 
       await updatePaymentSlip({
         bookingId: createdBookingId.value,
-        slipUrl: publicUrlData.publicUrl
+        slipUrl: publicUrlData.publicUrl,
+        transferName: name,
+        bankName: bank
       })
 
       slipUrl.value = publicUrlData.publicUrl
@@ -241,7 +325,9 @@ const handleFileSelected = async (event: Event) => {
 
       await createPayment({
         bookingId: booking.booking_id,
-        slipUrl: publicUrlData.publicUrl
+        slipUrl: publicUrlData.publicUrl,
+        transferName: name,
+        bankName: bank
       })
 
       slipUrl.value = publicUrlData.publicUrl
@@ -437,6 +523,9 @@ const resetAndLoad = async () => {
   slipUploaded.value = false
   isUploading.value = false
   slipUrl.value = null
+  transferName.value = ''
+  selectedBank.value = ''
+  customBankName.value = ''
   isHandlingBack.value = false
   createdBookingId.value = null
   createdBookingCode.value = null
