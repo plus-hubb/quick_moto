@@ -31,7 +31,7 @@
         </div>
 
         <!-- Line -->
-        <div class="bg-white rounded-2xl p-5 shadow-md border border-slate-100">
+        <a href="https://line.me/ti/p/5SAu79wft_" target="_blank" rel="noopener noreferrer" class="bg-white rounded-2xl p-5 shadow-md border border-slate-100 block hover:shadow-lg transition-shadow">
           <div class="flex items-center gap-4">
             <div class="w-12 h-12 rounded-full bg-[#dce5ff] flex items-center justify-center">
               <i class="fa-brands fa-line text-[#051329] text-lg"></i>
@@ -39,10 +39,10 @@
             <div>
               <h3 class="font-bold text-slate-900">Line Official</h3>
               <p class="text-sm text-slate-500">@quickmoto</p>
-              <p class="text-xs text-slate-400 mt-1">แชทได้ตลอด 24 ชม.</p>
+              <p class="text-xs text-slate-400 mt-1">แชทได้ตลอด 24 ชม. กดเพื่อเพิ่มเพื่อน</p>
             </div>
           </div>
-        </div>
+        </a>
 
         <!-- Email -->
         <div class="bg-white rounded-2xl p-5 shadow-md border border-slate-100">
