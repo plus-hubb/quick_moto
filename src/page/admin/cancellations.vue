@@ -512,7 +512,11 @@ const submitRefund = async () => {
       refundSlip: slipUrl
     })
 
-    closeRefundModal()
+    refundBooking.value = null
+    refundAmount.value = null
+    refundSlipFile.value = null
+    refundSlipPreview.value = ''
+    refundError.value = ''
     loadData()
   } catch (err) {
     console.error('Submit refund error:', err)
