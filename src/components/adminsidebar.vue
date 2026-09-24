@@ -68,6 +68,7 @@ const navItems = [
   { path: '/admin/delivery', label: 'รอส่งมอบ', icon: 'fa-solid fa-truck-ramp-box' },
   { path: '/admin/return', label: 'รอรับคืน', icon: 'fa-solid fa-box-open' },
   { path: '/admin/cancellations', label: 'รายการที่ยกเลิก', icon: 'fa-regular fa-calendar-xmark' },
+  { path: '/admin/refunded', label: 'คืนเงินแล้ว', icon: 'fa-solid fa-money-bill-transfer' },
   { path: '/admin/rental-history', label: 'ประวัติการเช่าที่เสร็จสิ้น', icon: 'fa-solid fa-clock-rotate-left' },
   { path: '/admin/revenue', label: 'รายงานรายได้', icon: 'fa-solid fa-chart-line' }
 ]

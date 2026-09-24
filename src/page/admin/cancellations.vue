@@ -83,6 +83,7 @@
                   <th class="text-left font-medium px-5 py-3">รถ</th>
                   <th class="text-left font-medium px-5 py-3">วันรับ-คืน</th>
                   <th class="text-left font-medium px-5 py-3">สลิป</th>
+                  <th class="text-right font-medium px-5 py-3">คืนเงิน</th>
                   <th class="text-right font-medium px-5 py-3">ดูรายละเอียด</th>
                 </tr>
               </thead>
@@ -101,6 +102,23 @@
                       มีสลิป
                     </span>
                     <span v-else class="text-xs text-slate-400">-</span>
+                  </td>
+                  <td class="px-5 py-3 text-right">
+                    <span
+                      v-if="b.refunded"
+                      class="inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700"
+                    >
+                      <i class="fa-solid fa-check"></i> คืนเงินแล้ว
+                    </span>
+                    <button
+                      v-else-if="canRefund(b)"
+                      type="button"
+                      @click="openRefundModal(b)"
+                      class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-all"
+                    >
+                      คืนเงิน
+                    </button>
+                    <span v-else class="text-xs text-slate-300">-</span>
                   </td>
                   <td class="px-5 py-3 text-right">
                     <button
@@ -137,6 +155,24 @@
               <p v-if="b.payment_slip" class="text-xs text-blue-600 mb-2">
                 <i class="fa-solid fa-image mr-1"></i>มีสลิปการชำระเงิน
               </p>
+
+              <div v-if="canRefund(b) || b.refunded" class="mb-2">
+                <button
+                  v-if="canRefund(b)"
+                  type="button"
+                  @click="openRefundModal(b)"
+                  class="w-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium py-2.5 rounded-xl transition-all"
+                >
+                  <i class="fa-solid fa-money-bill-transfer mr-1"></i> คืนเงิน
+                </button>
+                <div
+                  v-else-if="b.refunded"
+                  class="w-full text-center text-xs font-medium px-2.5 py-2 rounded-xl bg-emerald-100 text-emerald-700"
+                >
+                  <i class="fa-solid fa-check mr-1"></i>คืนเงินแล้ว
+                </div>
+              </div>
+
               <button
                 type="button"
                 @click="selectBooking(b)"
@@ -269,6 +305,76 @@
 
         </template>
 
+        <!-- ====== _REFUND MODAL ====== -->
+        <div v-if="refundBooking" class="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 overflow-y-auto">
+          <div class="bg-white rounded-2xl w-full max-w-md p-6 my-auto">
+            <h3 class="text-lg font-bold text-slate-900 mb-1">คืนเงิน</h3>
+            <p class="text-xs text-slate-400 mb-4">
+              รหัสจอง: {{ refundBooking.booking_code }} — {{ refundBooking.customer_name }} ({{ refundBooking.vehicle_brand }} {{ refundBooking.vehicle_model }})
+            </p>
+
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">จำนวนเงิน (บาท)</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">฿</span>
+                <input
+                  v-model.number="refundAmount"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0"
+                  class="w-full pl-8 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
+                />
+              </div>
+              <p v-if="refundBooking" class="text-xs text-slate-400 mt-1">เงินมัดจำ: ฿{{ formatPrice(refundBooking.deposit_price) }}</p>
+            </div>
+
+            <div class="mb-4">
+              <label class="block text-sm font-medium text-slate-700 mb-1.5">สลิปการคืนเงิน <span class="text-xs text-slate-400">(แนบรูป)</span></label>
+              <label
+                class="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl py-6 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/40 transition-all"
+                :class="{ '!border-emerald-400 !bg-emerald-50/40': refundSlipPreview }"
+              >
+                <i class="fa-solid fa-cloud-arrow-up text-xl text-slate-300 mb-2" :class="{ '!text-emerald-500': refundSlipPreview }"></i>
+                <span v-if="!refundSlipPreview" class="text-xs text-slate-400">แตะเพื่อเลือกไฟล์สลิป</span>
+                <span v-else class="text-xs text-emerald-600 font-medium">มีรูปสลิปแล้ว</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  class="hidden"
+                  @change="onRefundSlipFileChange"
+                />
+              </label>
+              <img
+                v-if="refundSlipPreview"
+                :src="refundSlipPreview"
+                alt="สลิปการคืนเงิน"
+                class="mt-2 w-full object-contain max-h-44 rounded-xl border border-slate-200"
+              />
+            </div>
+
+            <p v-if="refundError" class="text-xs text-red-500 mb-3">{{ refundError }}</p>
+
+            <div class="flex gap-3">
+              <button
+                type="button"
+                @click="closeRefundModal"
+                class="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium transition-all active:scale-[0.98]"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                @click="submitRefund"
+                :disabled="isSubmittingRefund"
+                class="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white text-sm font-medium transition-all active:scale-[0.98]"
+              >
+                {{ isSubmittingRefund ? 'กำลังบันทึก...' : 'ยืนยันคืนเงิน' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
       </main>
     </div>
   </div>
@@ -279,8 +385,17 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import AdminSidebar from '../../components/adminsidebar.vue'
 import { getCurrentAdmin, logoutAdmin } from '../../services/customerService'
-import { getCancelledBookings } from '../../services/deliveryReturnService'
+import { getCancelledBookings, uploadImage } from '../../services/deliveryReturnService'
+import { recordRefund, type Refund } from '../../services/refundService'
 import type { BookingWithDetails } from '../../services/deliveryReturnService'
+
+type CancelledBooking = BookingWithDetails & {
+  payment_slip: string | null
+  transfer_name: string | null
+  bank_name: string | null
+  refunded: boolean
+  refund: Refund | null
+}
 
 const router = useRouter()
 
@@ -288,10 +403,17 @@ const isSidebarOpen = ref(false)
 const admin = ref<{ admin_id: number; name: string; email: string } | null>(null)
 const isLoading = ref(false)
 
-const bookings = ref<(BookingWithDetails & { payment_slip: string | null; transfer_name: string | null; bank_name: string | null })[]>([])
-const selectedBooking = ref<(BookingWithDetails & { payment_slip: string | null; transfer_name: string | null; bank_name: string | null }) | null>(null)
+const bookings = ref<CancelledBooking[]>([])
+const selectedBooking = ref<CancelledBooking | null>(null)
 const slipImageError = ref(false)
 const searchKeyword = ref('')
+
+const refundBooking = ref<CancelledBooking | null>(null)
+const refundAmount = ref<number | null>(null)
+const refundSlipFile = ref<File | null>(null)
+const refundSlipPreview = ref('')
+const isSubmittingRefund = ref(false)
+const refundError = ref('')
 
 const filteredBookings = computed(() => {
   const keyword = searchKeyword.value.trim().toLowerCase()
@@ -328,6 +450,78 @@ const getCancelLabel = (reason: string | null) => {
   }
 }
 
+// ==============================
+// คืนเงิน
+// ==============================
+
+const canRefund = (b: CancelledBooking) =>
+  (b.cancel_reason === 'admin_reject' || b.cancel_reason === 'auto_expire') && !b.refunded
+
+const openRefundModal = (b: CancelledBooking) => {
+  refundBooking.value = b
+  refundAmount.value = b.deposit_price ?? 0
+  refundSlipFile.value = null
+  refundSlipPreview.value = ''
+  refundError.value = ''
+}
+
+const closeRefundModal = () => {
+  if (isSubmittingRefund.value) return
+  refundBooking.value = null
+  refundAmount.value = null
+  refundSlipFile.value = null
+  refundSlipPreview.value = ''
+  refundError.value = ''
+}
+
+const onRefundSlipFileChange = (e: Event) => {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  refundSlipFile.value = file
+  refundSlipPreview.value = URL.createObjectURL(file)
+  refundError.value = ''
+}
+
+const submitRefund = async () => {
+  if (!refundBooking.value) return
+
+  if (refundAmount.value === null || refundAmount.value === undefined || Number(refundAmount.value) <= 0) {
+    refundError.value = 'กรุณากรอกจำนวนเงินที่จะคืน'
+    return
+  }
+
+  if (!refundSlipFile.value) {
+    refundError.value = 'กรุณาแนบสลิปการคืนเงิน'
+    return
+  }
+
+  isSubmittingRefund.value = true
+  refundError.value = ''
+
+  try {
+    let slipUrl: string | null = null
+    if (refundSlipFile.value) {
+      slipUrl = await uploadImage(refundSlipFile.value)
+    }
+
+    await recordRefund({
+      bookingId: refundBooking.value.booking_id,
+      amount: Number(refundAmount.value),
+      refundSlip: slipUrl
+    })
+
+    closeRefundModal()
+    loadData()
+  } catch (err) {
+    console.error('Submit refund error:', err)
+    refundError.value = err instanceof Error ? `คืนเงินไม่สำเร็จ: ${err.message}` : 'คืนเงินไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+  } finally {
+    isSubmittingRefund.value = false
+  }
+}
+
 const loadData = async () => {
   isLoading.value = true
   try {
@@ -339,7 +533,7 @@ const loadData = async () => {
   }
 }
 
-const selectBooking = (b: BookingWithDetails & { payment_slip: string | null; transfer_name: string | null; bank_name: string | null }) => {
+const selectBooking = (b: CancelledBooking) => {
   selectedBooking.value = b
   slipImageError.value = false
 }

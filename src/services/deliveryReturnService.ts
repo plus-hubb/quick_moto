@@ -1,4 +1,5 @@
 import { supabaseAdmin } from '../lib/supabase'
+import { getRefundsByBookingIds, type Refund } from './refundService'
 
 export interface DeliveryReturn {
   delivery_return_id: number
@@ -415,7 +416,7 @@ export async function uploadImage(file: File): Promise<string> {
 /**
  * ดึงรายการจองสถานะ "ยกเลิก"
  */
-export async function getCancelledBookings(): Promise<(BookingWithDetails & { payment_slip: string | null; transfer_name: string | null; bank_name: string | null })[]> {
+export async function getCancelledBookings(): Promise<(BookingWithDetails & { payment_slip: string | null; transfer_name: string | null; bank_name: string | null; refunded: boolean; refund: Refund | null })[]> {
   const { data: bookings, error } = await supabaseAdmin
     .from('booking')
     .select('booking_id, booking_code, customer_id, vehicle_id, pickup_date, return_date, deposit_price, rental_price, status, booking_date, cancel_reason, cancel_note, license_plate, accommodation')
@@ -433,10 +434,11 @@ export async function getCancelledBookings(): Promise<(BookingWithDetails & { pa
   const vehicleIds = [...new Set(bookings.map(b => b.vehicle_id))]
   const bookingIds = bookings.map(b => b.booking_id)
 
-  const [customersRes, vehiclesRes, paymentsRes] = await Promise.all([
+  const [customersRes, vehiclesRes, paymentsRes, refundMap] = await Promise.all([
     supabaseAdmin.from('customer').select('customer_id, name, phone').in('customer_id', customerIds),
     supabaseAdmin.from('vehicle').select('vehicle_id, brand, model, image').in('vehicle_id', vehicleIds),
-    supabaseAdmin.from('payment').select('booking_id, payment_slip, transfer_name, bank_name').in('booking_id', bookingIds).order('payment_id', { ascending: true })
+    supabaseAdmin.from('payment').select('booking_id, payment_slip, transfer_name, bank_name').in('booking_id', bookingIds).order('payment_id', { ascending: true }),
+    getRefundsByBookingIds(bookingIds)
   ])
 
   if (paymentsRes.error) {
@@ -456,7 +458,9 @@ export async function getCancelledBookings(): Promise<(BookingWithDetails & { pa
     vehicle_image: vehicleMap.get(b.vehicle_id)?.image ?? null,
     payment_slip: paymentMap.get(b.booking_id)?.payment_slip ?? null,
     transfer_name: paymentMap.get(b.booking_id)?.transfer_name ?? null,
-    bank_name: paymentMap.get(b.booking_id)?.bank_name ?? null
+    bank_name: paymentMap.get(b.booking_id)?.bank_name ?? null,
+    refunded: refundMap.has(b.booking_id),
+    refund: refundMap.get(b.booking_id) ?? null
   }))
 }
 

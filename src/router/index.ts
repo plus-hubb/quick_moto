@@ -18,6 +18,7 @@ import AdminVehiclesView from '../page/admin/vehicles-admin.vue'
 import DeliveryReturnView from '../page/admin/delivery-return.vue'
 import PendingApprovalView from '../page/admin/pending-approval.vue'
 import CancellationsView from '../page/admin/cancellations.vue'
+import RefundedView from '../page/admin/refunded.vue'
 import RentalHistoryView from '../page/admin/rental-history.vue'
 import RevenueView from '../page/admin/revenue.vue'
 import WalkInView from '../page/admin/walk-in-booking.vue'
@@ -113,6 +114,11 @@ const routes: Array<RouteRecordRaw> = [
   component: CancellationsView,
 },
 {
+  path: '/admin/refunded',
+  name: 'admin-refunded',
+  component: RefundedView,
+},
+{
   path: '/admin/rental-history',
   name: 'admin-rental-history',
   component: RentalHistoryView,
@@ -149,6 +155,7 @@ const adminRoutes = [
   'admin-delivery',
   'admin-return',
   'admin-cancellations',
+  'admin-refunded',
   'admin-rental-history',
   'admin-revenue',
   'admin-walk-in-booking',
