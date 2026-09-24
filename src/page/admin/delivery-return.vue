@@ -101,7 +101,7 @@
                   <td class="px-5 py-3 text-right">
                     <div class="flex items-center justify-end gap-2">
                       <button
-                        v-if="isDeliveryMode && isPastPickupDate(b.return_date)"
+                        v-if="isDeliveryMode && isPickupReached(b.pickup_date)"
                         type="button"
                         @click="handleCancelNoShow(b)"
                         :disabled="isCancelling"
@@ -140,7 +140,7 @@
               <p class="text-xs text-slate-400 mb-3">{{ b.pickup_date }} - {{ b.return_date }}</p>
               <div class="flex gap-2">
                 <button
-                  v-if="isDeliveryMode && isPastPickupDate(b.return_date)"
+                  v-if="isDeliveryMode && isPickupReached(b.pickup_date)"
                   type="button"
                   @click="handleCancelNoShow(b)"
                   :disabled="isCancelling"
@@ -661,12 +661,12 @@ const filteredBookings = computed(() => {
   })
 })
 
-const isPastPickupDate = (pickupDate: string): boolean => {
+const isPickupReached = (pickupDate: string): boolean => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const pickup = new Date(pickupDate)
   pickup.setHours(0, 0, 0, 0)
-  return pickup < today
+  return pickup <= today
 }
 
 const isCancelling = ref(false)
