@@ -35,6 +35,20 @@
         <p class="text-xs text-slate-400 mt-1">รหัสการจองของคุณ: {{ booking.booking_code }}</p>
       </div>
 
+      <!-- คำเตือนเวลารับรถ -->
+      <div
+        v-if="showPickupTimeNotice"
+        class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6 flex items-start gap-3"
+      >
+        <i class="fa-solid fa-clock text-amber-500 text-lg mt-0.5"></i>
+        <div class="flex-1">
+          <p class="text-sm font-bold text-amber-800">เวลาทำการรับรถ</p>
+          <p class="text-xs text-amber-700 mt-1">
+            ควรมารับรถภายในเวลา <span class="font-semibold">08.00 - 18.00 น.</span> หากเกินเวลานี้รถอาจถูกยกเลิกการจอง
+          </p>
+        </div>
+      </div>
+
       <!-- Refund Notice (แสดงเฉพาะเมื่อยกเลิกด้วยเหตุผลที่ต้องขอเงินคืน) -->
       <div
         v-if="showRefundNotice"
@@ -307,6 +321,13 @@ const canDownload = computed(() => {
   if (!booking.value) return false
   const status = normalizeStatus(booking.value.status)
   return ['อนุมัติแล้ว', 'กำลังเช่า', 'เสร็จสิ้น', 'ยกเลิก'].includes(status)
+})
+
+// แสดงคำเตือนเวลารับรถเฉพาะตอนการจองยังไม่ถูกส่งมอบ/เสร็จสิ้น
+const showPickupTimeNotice = computed(() => {
+  if (!booking.value) return false
+  const status = normalizeStatus(booking.value.status)
+  return ['รออนุมัติ', 'อนุมัติแล้ว', 'กำลังเช่า'].includes(status)
 })
 
 const showRefundNotice = computed(() => {
